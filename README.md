@@ -1,7 +1,11 @@
 # eLog - Enhanced Logging System for Embedded MCU Projects
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/Platform-ARM%20Cortex--M-blue.svg)](https://developer.arm.com/architectures/cpu-architecture/m-profile)
+[![Platform](https## 🧵 RTOS Threading Configuration
+
+> ⚠️ **CONFIGURATION ORDER WARNING**: All custom `#define` statements must be placed **AFTER line 28** in `eLog.h` where RTOS type constants (`ELOG_RTOS_FREERTOS`, `ELOG_RTOS_THREADX`, etc.) are defined. Incorrect placement will result in "undefined identifier" compilation errors.
+
+### Thread Safety Optionsimg.shields.io/badge/Platform-ARM%20Cortex--M-blue.svg)](https://developer.arm.com/architectures/cpu-architecture/m-profile)
 [![C Standard](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
 
 A comprehensive, lightweight, and feature-rich logging system designed specifically for embedded microcontroller projects. Inspired by uLog but significantly enhanced with modern features, backwards compatibility, and embedded-first design.
@@ -77,6 +81,9 @@ int main() {
 
 ### Configuration
 Configure debug levels in `eLog.h`:
+
+> ⚠️ **IMPORTANT**: Any custom configuration must be placed **AFTER line 28** in `eLog.h` where the RTOS type constants are defined. Placing configuration before this line will cause compilation errors due to undefined RTOS constants.
+
 ```c
 #define DEBUG_INFO YES      /* Information messages */
 #define DEBUG_WARN YES      /* Warning messages */

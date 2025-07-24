@@ -17,30 +17,22 @@
 #include <string.h>
 #include <stdint.h>
 
-/* RTOS-specific includes based on configuration */
-#if (ELOG_THREAD_SAFE == 1)
-  #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
-    #ifdef INC_FREERTOS_H  /* Only include if FreeRTOS is available */
-      #include "FreeRTOS.h"
-      #include "semphr.h"
-      #include "task.h"
-    #endif
-  #elif (ELOG_RTOS_TYPE == ELOG_RTOS_THREADX)
-    #ifdef TX_API_H  /* Only include if ThreadX is available */
-      #include "tx_api.h"
-    #endif
-  #elif (ELOG_RTOS_TYPE == ELOG_RTOS_CMSIS)
-    #ifdef CMSIS_OS_H_  /* Only include if CMSIS-RTOS is available */
-      #include "cmsis_os.h"
-    #endif
-  #endif
-#endif
-
 /* ========================================================================== */
 /* Enhanced Logging Configuration */
 /* ========================================================================== */
 
-/* RTOS Threading Support Configuration */
+/* Supported RTOS types - Define these first before using them */
+#define ELOG_RTOS_NONE       0      /* No RTOS - bare metal */
+#define ELOG_RTOS_FREERTOS   1      /* FreeRTOS */
+#define ELOG_RTOS_THREADX    2      /* Azure ThreadX */
+#define ELOG_RTOS_CMSIS      3      /* CMSIS-RTOS */
+
+/* Default eLog Configuration - Override these in your project if needed */
+#define ELOG_THREAD_SAFE 1
+#define ELOG_RTOS_TYPE ELOG_RTOS_THREADX
+#define ELOG_MUTEX_TIMEOUT_MS 100
+
+/* RTOS Threading Support Configuration (with fallback defaults) */
 #ifndef ELOG_THREAD_SAFE
 #define ELOG_THREAD_SAFE 1          /* Enable thread safety (0=disable, 1=enable) */
 #endif
@@ -49,11 +41,29 @@
 #define ELOG_RTOS_TYPE ELOG_RTOS_THREADX  /* Default to Azure ThreadX */
 #endif
 
-/* Supported RTOS types */
-#define ELOG_RTOS_NONE       0      /* No RTOS - bare metal */
-#define ELOG_RTOS_FREERTOS   1      /* FreeRTOS */
-#define ELOG_RTOS_THREADX    2      /* Azure ThreadX */
-#define ELOG_RTOS_CMSIS      3      /* CMSIS-RTOS */
+#ifndef ELOG_MUTEX_TIMEOUT_MS
+#define ELOG_MUTEX_TIMEOUT_MS 100   /* Thread safety timeout (in milliseconds) */
+#endif
+
+/* RTOS-specific includes based on configuration */
+#if (ELOG_THREAD_SAFE == 1)
+  #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
+    /* Include FreeRTOS headers */
+    #include "FreeRTOS.h"
+    #include "semphr.h"
+    #include "task.h"
+  #elif (ELOG_RTOS_TYPE == ELOG_RTOS_THREADX)
+    /* Include ThreadX headers */
+    #include "tx_api.h"
+  #elif (ELOG_RTOS_TYPE == ELOG_RTOS_CMSIS)
+    /* Include CMSIS-RTOS headers */
+    #include "cmsis_os.h"
+  #endif
+#endif
+
+/* ========================================================================== */
+/* Enhanced Logging Configuration (continued) */
+/* ========================================================================== */
 
 /* Local definitions for independence from app_conf.h */
 #ifndef YES
@@ -122,11 +132,6 @@ static inline const char *debug_get_filename(const char *fullpath) {
 /* Maximum length of formatted log message */
 #ifndef LOG_MAX_MESSAGE_LENGTH
 #define LOG_MAX_MESSAGE_LENGTH 128
-#endif
-
-/* Thread safety timeout (in milliseconds) */
-#ifndef ELOG_MUTEX_TIMEOUT_MS
-#define ELOG_MUTEX_TIMEOUT_MS 100
 #endif
 
 /* ========================================================================== */
