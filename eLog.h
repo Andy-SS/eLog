@@ -46,7 +46,7 @@
 #endif
 
 #ifndef ELOG_RTOS_TYPE
-#define ELOG_RTOS_TYPE ELOG_RTOS_FREERTOS  /* Default to FreeRTOS */
+#define ELOG_RTOS_TYPE ELOG_RTOS_THREADX  /* Default to Azure ThreadX */
 #endif
 
 /* Supported RTOS types */

@@ -13,6 +13,32 @@
 #define ELOG_CONFIG_EXAMPLES_H
 
 /* ========================================================================== */
+/* Azure ThreadX Configuration Example (Default) */
+/* ========================================================================== */
+#if 1  /* Default: Azure ThreadX */
+
+/* Thread safety configuration */
+#define ELOG_THREAD_SAFE 1
+#define ELOG_RTOS_TYPE ELOG_RTOS_THREADX
+#define ELOG_MUTEX_TIMEOUT_MS 100
+
+/* Include ThreadX headers before eLog.h in your source files */
+/* #include "tx_api.h" */
+/* #include "eLog.h" */
+
+/* Usage in ThreadX threads: */
+/*
+void thread_entry(ULONG thread_input) {
+    while(1) {
+        LOG_INFO("Thread [%s] processing", elog_get_task_name());
+        tx_thread_sleep(100);
+    }
+}
+*/
+
+#endif /* ThreadX Configuration */
+
+/* ========================================================================== */
 /* FreeRTOS Configuration Example */
 /* ========================================================================== */
 #if 0  /* Enable for FreeRTOS projects */
@@ -95,7 +121,7 @@ void thread_function(void *argument) {
 /* ========================================================================== */
 /* Bare Metal Configuration Example */
 /* ========================================================================== */
-#if 1  /* Default: Bare metal (no RTOS) */
+#if 0  /* Enable for bare metal (no RTOS) projects */
 
 /* Disable thread safety for bare metal */
 #define ELOG_THREAD_SAFE 0
