@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdint.h>
+#include "bit_utils.h"
 
 /* ========================================================================== */
 /* Enhanced Logging Configuration */
@@ -499,20 +500,6 @@ extern void log_console_subscriber_with_thread(log_level_t level, const char *ms
 /* Legacy Logging System (Backwards Compatibility) */
 /* ==========================================================================*/
 
-/**
- * @brief Legacy log level enum (kept for backwards compatibility)
- */
-typedef enum {
-  TTK_LOG_NONE,   /*!< No log output */
-  TTK_LOG_ERROR,  /*!< Critical errors, software module can not recover on its own */
-  TTK_LOG_WARN,   /*!< Error conditions from which recovery measures have been taken */
-  TTK_LOG_INFO,   /*!< Information messages which describe normal flow of events */
-  TTK_LOG_DEBUG,  /*!< Extra information which is not necessary for normal use (values, pointers,
-                     sizes, etc). */
-  TTK_LOG_VERBOSE /*!< Bigger chunks of debugging information, or frequent messages which can
-                     potentially flood the output. */
-} ttk_log_level_t;
-
 /* Color control for enhanced logging console subscriber */
 #define USE_COLOR 1  /* Set to 0 to disable colors in log_console_subscriber */
 #define LOG_COLOR_BLACK  "30"
@@ -603,22 +590,6 @@ typedef enum {
 #else
 #define printTRACE(format, ...)
 #define printTRACE_STR(str)
-#endif
-
-#ifndef SET_BIT
-#define SET_BIT(reg, bit)   ((reg) |= (1 << (bit)))  // Set a specific bit in a register
-#endif
-#ifndef CLEAR_BIT
-#define CLEAR_BIT(reg, bit) ((reg) &= ~(1 << (bit))) // Clear a specific bit in a register
-#endif
-#ifndef TOGGLE_BIT
-#define TOGGLE_BIT(reg, bit) ((reg) ^= (1 << (bit))) // Toggle a specific bit in a register
-#endif
-#ifndef READ_BIT
-#define READ_BIT(reg, bit)  ((reg) & (1 << (bit)))   // Read a specific bit from a register
-#endif
-#ifndef BIT
-#define BIT(x) (1 << (x)) // Create a bit mask
 #endif
 
 #endif /* APP_DEBUG_H_ */

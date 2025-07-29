@@ -58,10 +58,11 @@ A comprehensive, lightweight, and feature-rich logging system designed specifica
 ## 📦 Quick Start
 
 ### Installation
-Simply copy `eLog.h` and `eLog.c` to your project and include them in your build system.
+Simply copy `eLog.h`, `eLog.c`, and `bit_utils.h` to your project and include them in your build system.
 
 ```c
 #include "eLog.h"
+#include "bit_utils.h"  // For bit manipulation utilities
 
 int main() {
     // Initialize with console output and automatic threshold
@@ -82,7 +83,7 @@ int main() {
 ### Configuration
 Configure debug levels in `eLog.h`:
 
-> ⚠️ **IMPORTANT**: Any custom configuration must be placed **AFTER line 28** in `eLog.h` where the RTOS type constants are defined. Placing configuration before this line will cause compilation errors due to undefined RTOS constants.
+> ⚠️ **IMPORTANT**: Any custom configuration must be placed **AFTER line 29** in `eLog.h` where the RTOS type constants are defined. Placing configuration before this line will cause compilation errors due to undefined RTOS constants.
 
 ```c
 #define DEBUG_INFO YES      /* Information messages */
