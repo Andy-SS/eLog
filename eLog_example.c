@@ -21,7 +21,7 @@
  * @brief  Demonstrate basic enhanced logging usage
  * @retval None
  */
-void enhanced_logging_basic_example(void) {
+void enhancedLoggingBasicExample(void) {
   // Initialize the enhanced logging system with console subscriber
   LOG_INIT_WITH_CONSOLE_AUTO();
 
@@ -42,7 +42,7 @@ void enhanced_logging_basic_example(void) {
  * @brief  Demonstrate legacy logging compatibility
  * @retval None
  */
-void legacy_logging_example(void) {
+void legacyLoggingExample(void) {
   // Legacy print macros (now use enhanced logging internally)
   printIF("Information message using legacy printIF");
   printLOG("Debug message using legacy printLOG: value=%d", 123);
@@ -59,7 +59,7 @@ void legacy_logging_example(void) {
  * @param  level: Log level
  * @param  msg: Formatted message
  */
-void custom_file_subscriber(log_level_t level, const char *msg) {
+void customFileSubscriber(log_level_t level, const char *msg) {
   // This is just an example - in real implementation you would write to file
   printf("[FILE] %s: %s\n", log_level_name(level), msg);
 }
@@ -69,7 +69,7 @@ void custom_file_subscriber(log_level_t level, const char *msg) {
  * @param  level: Log level
  * @param  msg: Formatted message
  */
-void custom_memory_subscriber(log_level_t level, const char *msg) {
+void customMemorySubscriber(log_level_t level, const char *msg) {
   // This is just an example - in real implementation you would store in memory buffer
   static int message_count = 0;
   message_count++;
@@ -80,14 +80,14 @@ void custom_memory_subscriber(log_level_t level, const char *msg) {
  * @brief  Demonstrate multiple subscribers
  * @retval None
  */
-void multiple_subscribers_example(void) {
+void multipleSubscribersExample(void) {
   // Initialize logging system
   LOG_INIT();
 
   // Subscribe multiple handlers with different thresholds
-  LOG_SUBSCRIBE(log_console_subscriber, LOG_LEVEL_DEBUG);   // Console gets debug and above
-  LOG_SUBSCRIBE(custom_file_subscriber, LOG_LEVEL_INFO);    // File gets info and above
-  LOG_SUBSCRIBE(custom_memory_subscriber, LOG_LEVEL_ERROR); // Memory gets only errors
+  LOG_SUBSCRIBE(logConsoleSubscriber, LOG_LEVEL_DEBUG);   // Console gets debug and above
+  LOG_SUBSCRIBE(customFileSubscriber, LOG_LEVEL_INFO);    // File gets info and above
+  LOG_SUBSCRIBE(customMemorySubscriber, LOG_LEVEL_ERROR); // Memory gets only errors
 
   LOG_INFO("=== Multiple Subscribers Demo ===");
 
@@ -106,7 +106,7 @@ void multiple_subscribers_example(void) {
  * @brief  Demonstrate automatic threshold calculation
  * @retval None
  */
-void auto_threshold_example(void) {
+void autoThresholdExample(void) {
   LOG_INIT_WITH_CONSOLE_AUTO();
 
   LOG_INFO("=== Auto Threshold Demo ===");
@@ -167,7 +167,7 @@ void auto_threshold_example(void) {
  * @brief  Demonstrate performance comparison
  * @retval None
  */
-void performance_demo(void) {
+void performanceDemo(void) {
   LOG_INIT_WITH_CONSOLE_AUTO();
 
   LOG_INFO("=== Performance Demo ===");
@@ -196,7 +196,7 @@ void performance_demo(void) {
  * @brief  Demonstrate unified debug flag control
  * @retval None
  */
-void unified_debug_control_demo(void) {
+void unifiedDebugControlDemo(void) {
   LOG_INIT_WITH_CONSOLE_AUTO();
 
   LOG_INFO("=== Unified Debug Control Demo ===");
@@ -222,7 +222,7 @@ void unified_debug_control_demo(void) {
  * @brief  Demonstrate subscriber management
  * @retval None
  */
-void subscriber_management_demo(void) {
+void subscriberManagementDemo(void) {
   LOG_INIT();
 
   // Subscribe console
@@ -230,11 +230,11 @@ void subscriber_management_demo(void) {
   LOG_INFO("Console subscriber added");
 
   // Add custom subscriber
-  LOG_SUBSCRIBE(custom_memory_subscriber, LOG_LEVEL_WARNING);
+  LOG_SUBSCRIBE(customMemorySubscriber, LOG_LEVEL_WARNING);
   LOG_WARNING("Memory subscriber added - you should see this in both console and memory");
 
   // Remove memory subscriber
-  LOG_UNSUBSCRIBE(custom_memory_subscriber);
+  LOG_UNSUBSCRIBE(customMemorySubscriber);
   LOG_WARNING("Memory subscriber removed - you should only see this in console");
 
   LOG_INFO_STR("Subscriber management demo complete");
@@ -244,31 +244,31 @@ void subscriber_management_demo(void) {
  * @brief  Complete demonstration of enhanced logging features
  * @retval None
  */
-void complete_logging_demo(void) {
+void completeLoggingDemo(void) {
   printf("\n" LOG_COLOR(LOG_COLOR_CYAN) "==========================================\n");
   printf("    Enhanced Logging System Demo\n");
   printf("==========================================" LOG_RESET_COLOR "\n\n");
 
   // Run all examples
-  enhanced_logging_basic_example();
+  enhancedLoggingBasicExample();
   printf("\n");
 
-  legacy_logging_example();
+  legacyLoggingExample();
   printf("\n");
 
-  auto_threshold_example();
+  autoThresholdExample();
   printf("\n");
 
-  unified_debug_control_demo();
+  unifiedDebugControlDemo();
   printf("\n");
 
-  performance_demo();
+  performanceDemo();
   printf("\n");
 
-  subscriber_management_demo();
+  subscriberManagementDemo();
   printf("\n");
 
-  multiple_subscribers_example();
+  multipleSubscribersExample();
   printf("\n");
 
   printf(LOG_COLOR(LOG_COLOR_GREEN) "==========================================\n");
@@ -280,7 +280,7 @@ void complete_logging_demo(void) {
  * @brief  Simple initialization example for real applications
  * @retval None
  */
-void simple_app_initialization_example(void) {
+void simpleAppInitializationExample(void) {
   // This is all you need in your main() or initialization function:
   LOG_INIT_WITH_CONSOLE_AUTO();
 
@@ -293,4 +293,31 @@ void simple_app_initialization_example(void) {
   // - Respects debug flag settings
   // - Optimizes disabled levels at compile time
   // - Provides unified behavior between APIs
+}
+
+/**
+ * @brief Demonstrate RTOS readiness update
+ * @retval None
+ */
+void rtosReadinessExample(void) {
+    // Update RTOS readiness flag
+    elogUpdateRtosReady(true);
+
+    // Log a message indicating RTOS is ready
+    LOG_INFO("RTOS is now ready for logging");
+}
+
+/* Updated example usage for eLog */
+int main() {
+    // Initialize logging system
+    logInit();
+
+    // Subscribe to console output
+    logSubscribe(logConsoleSubscriber, LOG_LEVEL_INFO);
+
+    // Log messages
+    logMessage(LOG_LEVEL_INFO, "System initialized");
+    logMessage(LOG_LEVEL_ERROR, "Error code: 0x%02X", COMM_ERR_I2C);
+
+    return 0;
 }

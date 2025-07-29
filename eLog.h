@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include "bit_utils.h"
 
@@ -28,39 +29,10 @@
 #define ELOG_RTOS_THREADX    2      /* Azure ThreadX */
 #define ELOG_RTOS_CMSIS      3      /* CMSIS-RTOS */
 
-/* Default eLog Configuration - Override these in your project if needed */
+// /* Default eLog Configuration - Override these in your project if needed */
 #define ELOG_THREAD_SAFE 1
 #define ELOG_RTOS_TYPE ELOG_RTOS_THREADX
 #define ELOG_MUTEX_TIMEOUT_MS 100
-
-/* RTOS Threading Support Configuration (with fallback defaults) */
-#ifndef ELOG_THREAD_SAFE
-#define ELOG_THREAD_SAFE 1          /* Enable thread safety (0=disable, 1=enable) */
-#endif
-
-#ifndef ELOG_RTOS_TYPE
-#define ELOG_RTOS_TYPE ELOG_RTOS_THREADX  /* Default to Azure ThreadX */
-#endif
-
-#ifndef ELOG_MUTEX_TIMEOUT_MS
-#define ELOG_MUTEX_TIMEOUT_MS 100   /* Thread safety timeout (in milliseconds) */
-#endif
-
-/* RTOS-specific includes based on configuration */
-#if (ELOG_THREAD_SAFE == 1)
-  #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
-    /* Include FreeRTOS headers */
-    #include "FreeRTOS.h"
-    #include "semphr.h"
-    #include "task.h"
-  #elif (ELOG_RTOS_TYPE == ELOG_RTOS_THREADX)
-    /* Include ThreadX headers */
-    #include "tx_api.h"
-  #elif (ELOG_RTOS_TYPE == ELOG_RTOS_CMSIS)
-    /* Include CMSIS-RTOS headers */
-    #include "cmsis_os.h"
-  #endif
-#endif
 
 /* ========================================================================== */
 /* Enhanced Logging Configuration (continued) */
@@ -139,6 +111,23 @@ static inline const char *debug_get_filename(const char *fullpath) {
 /* RTOS Threading Support Types */
 /* ========================================================================== */
 
+/* RTOS-specific includes based on configuration */
+#if (ELOG_THREAD_SAFE == 1)
+  extern volatile bool RTOS_READY; // Flag to indicate if RTOS is ready
+  #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
+    /* Include FreeRTOS headers */
+    #include "FreeRTOS.h"
+    #include "semphr.h"
+    #include "task.h"
+  #elif (ELOG_RTOS_TYPE == ELOG_RTOS_THREADX)
+    /* Include ThreadX headers */
+    #include "tx_api.h"
+  #elif (ELOG_RTOS_TYPE == ELOG_RTOS_CMSIS)
+    /* Include CMSIS-RTOS headers */
+    #include "cmsis_os.h"
+  #endif
+#endif
+
 #if (ELOG_THREAD_SAFE == 1)
 
 /* RTOS-abstracted mutex type */
@@ -153,10 +142,8 @@ static inline const char *debug_get_filename(const char *fullpath) {
 #elif (ELOG_RTOS_TYPE == ELOG_RTOS_THREADX)
   #ifdef TX_API_H
     typedef TX_MUTEX elog_mutex_t;
-    #define ELOG_MUTEX_TIMEOUT (ELOG_MUTEX_TIMEOUT_MS * TX_TIMER_TICKS_PER_SECOND / 1000)
   #else
     typedef void* elog_mutex_t;  /* Fallback when ThreadX not available */
-    #define ELOG_MUTEX_TIMEOUT 0
   #endif
 #elif (ELOG_RTOS_TYPE == ELOG_RTOS_CMSIS)
   #ifdef CMSIS_OS_H_
@@ -181,10 +168,10 @@ typedef enum {
 } elog_thread_result_t;
 
 /* Thread safety functions */
-elog_thread_result_t elog_mutex_create(elog_mutex_t *mutex);
-elog_thread_result_t elog_mutex_take(elog_mutex_t *mutex, uint32_t timeout_ms);
-elog_thread_result_t elog_mutex_give(elog_mutex_t *mutex);
-elog_thread_result_t elog_mutex_delete(elog_mutex_t *mutex);
+elog_thread_result_t elogMutexCreate(elog_mutex_t *mutex);
+elog_thread_result_t elogMutexTake(elog_mutex_t *mutex, uint32_t timeout_ms);
+elog_thread_result_t elogMutexGive(elog_mutex_t *mutex);
+elog_thread_result_t elogMutexDelete(elog_mutex_t *mutex);
 
 #endif /* ELOG_THREAD_SAFE */
 
@@ -331,53 +318,53 @@ typedef enum {
 /* ========================================================================== */
 
 /* Enhanced logging functions */
-void log_init(void);
-log_err_t log_subscribe(log_subscriber_t fn, log_level_t threshold);
-log_err_t log_unsubscribe(log_subscriber_t fn);
-const char *log_level_name(log_level_t level);
-void log_message(log_level_t level, const char *fmt, ...);
-void log_message_with_location(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
-log_level_t log_get_auto_threshold(void);
+void logInit(void);
+log_err_t logSubscribe(log_subscriber_t fn, log_level_t threshold);
+log_err_t logUnsubscribe(log_subscriber_t fn);
+const char *logLevelName(log_level_t level);
+void logMessage(log_level_t level, const char *fmt, ...);
+void logMessageWithLocation(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
+log_level_t logGetAutoThreshold(void);
 
 /* Thread-safe logging functions (always declared, but may have fallback implementations) */
-void log_message_safe(log_level_t level, const char *fmt, ...);
-void log_message_with_location_safe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
-log_err_t log_subscribe_safe(log_subscriber_t fn, log_level_t threshold);
-log_err_t log_unsubscribe_safe(log_subscriber_t fn);
+void logMessageSafe(log_level_t level, const char *fmt, ...);
+void logMessageWithLocationSafe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
+log_err_t logSubscribeSafe(log_subscriber_t fn, log_level_t threshold);
+log_err_t logUnsubscribeSafe(log_subscriber_t fn);
 
 #if (ELOG_THREAD_SAFE == 1)
 /* Thread info functions for enhanced debugging (only available when threading enabled) */
-const char *elog_get_task_name(void);
-uint32_t elog_get_task_id(void);
+const char *elogGetTaskName(void);
+uint32_t elogGetTaskId(void);
 
 /* Thread-aware console subscriber */
-extern void log_console_subscriber_with_thread(log_level_t level, const char *msg);
+extern void logConsoleSubscriberWithThread(log_level_t level, const char *msg);
 #endif
 
 /* Thread-safe aliases - automatically select based on ELOG_THREAD_SAFE */
 #if (ELOG_THREAD_SAFE == 1)
-  #define LOG_MESSAGE(level, ...) log_message_safe(level, __VA_ARGS__)
-  #define LOG_MESSAGE_WITH_LOCATION(level, file, func, line, ...) log_message_with_location_safe(level, file, func, line, __VA_ARGS__)
-  #define LOG_SUBSCRIBE_THREAD_SAFE(fn, level) log_subscribe_safe(fn, level)
-  #define LOG_UNSUBSCRIBE_THREAD_SAFE(fn) log_unsubscribe_safe(fn)
+  #define LOG_MESSAGE(level, ...) logMessageSafe(level, __VA_ARGS__)
+  #define LOG_MESSAGE_WITH_LOCATION(level, file, func, line, ...) logMessageWithLocationSafe(level, file, func, line, __VA_ARGS__)
+  #define LOG_SUBSCRIBE_THREAD_SAFE(fn, level) logSubscribeSafe(fn, level)
+  #define LOG_UNSUBSCRIBE_THREAD_SAFE(fn) logUnsubscribeSafe(fn)
 #else
-  #define LOG_MESSAGE(level, ...) log_message(level, __VA_ARGS__)
-  #define LOG_MESSAGE_WITH_LOCATION(level, file, func, line, ...) log_message_with_location(level, file, func, line, __VA_ARGS__)
-  #define LOG_SUBSCRIBE_THREAD_SAFE(fn, level) log_subscribe(fn, level)
-  #define LOG_UNSUBSCRIBE_THREAD_SAFE(fn) log_unsubscribe(fn)
+  #define LOG_MESSAGE(level, ...) logMessage(level, __VA_ARGS__)
+  #define LOG_MESSAGE_WITH_LOCATION(level, file, func, line, ...) logMessageWithLocation(level, file, func, line, __VA_ARGS__)
+  #define LOG_SUBSCRIBE_THREAD_SAFE(fn, level) logSubscribe(fn, level)
+  #define LOG_UNSUBSCRIBE_THREAD_SAFE(fn) logUnsubscribe(fn)
 #endif
 
 /* Enhanced logging core macros */
-#define LOG_INIT() log_init()
+#define LOG_INIT() logInit()
 #define LOG_SUBSCRIBE(fn, level) LOG_SUBSCRIBE_THREAD_SAFE(fn, level)
 #define LOG_UNSUBSCRIBE(fn) LOG_UNSUBSCRIBE_THREAD_SAFE(fn)
-#define LOG_LEVEL_NAME(level) log_level_name(level)
+#define LOG_LEVEL_NAME(level) logLevelName(level)
 
 /* Convenience setup macro with console subscriber */
-extern void log_console_subscriber(log_level_t level, const char *msg);
+extern void logConsoleSubscriber(log_level_t level, const char *msg);
 #define LOG_INIT_WITH_CONSOLE() do { \
     LOG_INIT(); \
-    LOG_SUBSCRIBE(log_console_subscriber, LOG_AUTO_THRESHOLD); \
+    LOG_SUBSCRIBE(logConsoleSubscriber, LOG_AUTO_THRESHOLD); \
 } while(0)
 
 /* Enhanced convenience macros with automatic threshold */
@@ -385,8 +372,8 @@ extern void log_console_subscriber(log_level_t level, const char *msg);
     LOG_INIT(); \
 } while(0)
 
-#define LOG_SUBSCRIBE_CONSOLE() LOG_SUBSCRIBE(log_console_subscriber, LOG_AUTO_THRESHOLD)
-#define LOG_SUBSCRIBE_CONSOLE_LEVEL(level) LOG_SUBSCRIBE(log_console_subscriber, level)
+#define LOG_SUBSCRIBE_CONSOLE() LOG_SUBSCRIBE(logConsoleSubscriber, LOG_AUTO_THRESHOLD)
+#define LOG_SUBSCRIBE_CONSOLE_LEVEL(level) LOG_SUBSCRIBE(logConsoleSubscriber, level)
 
 /* Ultimate convenience macro - initializes and subscribes console with auto threshold */
 #define LOG_INIT_WITH_CONSOLE_AUTO() do { \
@@ -398,10 +385,10 @@ extern void log_console_subscriber(log_level_t level, const char *msg);
 #if (ELOG_THREAD_SAFE == 1)
 #define LOG_INIT_WITH_THREAD_INFO() do { \
     LOG_INIT(); \
-    LOG_SUBSCRIBE(log_console_subscriber_with_thread, LOG_AUTO_THRESHOLD); \
+    LOG_SUBSCRIBE(logConsoleSubscriberWithThread, LOG_AUTO_THRESHOLD); \
 } while(0)
 
-extern void log_console_subscriber_with_thread(log_level_t level, const char *msg);
+extern void logConsoleSubscriberWithThread(log_level_t level, const char *msg);
 #endif
 
 /* Individual level macros - follow same pattern as legacy debug macros */
@@ -501,7 +488,7 @@ extern void log_console_subscriber_with_thread(log_level_t level, const char *ms
 /* ==========================================================================*/
 
 /* Color control for enhanced logging console subscriber */
-#define USE_COLOR 1  /* Set to 0 to disable colors in log_console_subscriber */
+#define USE_COLOR 1  /* Set to 0 to disable colors in logConsoleSubscriber */
 #define LOG_COLOR_BLACK  "30"
 #define LOG_COLOR_RED    "31"
 #define LOG_COLOR_GREEN  "32"
@@ -591,5 +578,11 @@ extern void log_console_subscriber_with_thread(log_level_t level, const char *ms
 #define printTRACE(format, ...)
 #define printTRACE_STR(str)
 #endif
+
+/**
+ * @brief Update the RTOS_READY flag
+ * @param ready: Boolean value indicating if RTOS is ready (1) or not (0)
+ */
+void elogUpdateRTOSReady(bool ready);
 
 #endif /* APP_DEBUG_H_ */

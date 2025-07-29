@@ -23,18 +23,16 @@
 #define ELOG_MUTEX_TIMEOUT_MS 100
 
 /* Include ThreadX headers before eLog.h in your source files */
-/* #include "tx_api.h" */
-/* #include "eLog.h" */
+#include "tx_api.h"
+#include "eLog.h"
 
 /* Usage in ThreadX threads: */
-/*
 void thread_entry(ULONG thread_input) {
     while(1) {
-        LOG_INFO("Thread [%s] processing", elog_get_task_name());
+        LOG_INFO("Thread [%s] processing", elogGetTaskName());
         tx_thread_sleep(100);
     }
 }
-*/
 
 #endif /* ThreadX Configuration */
 
@@ -84,7 +82,7 @@ void vTask1(void *pvParameters) {
 /*
 void thread_entry(ULONG thread_input) {
     while(1) {
-        LOG_INFO("Thread [%s] processing", elog_get_task_name());
+        LOG_INFO("Thread [%s] processing", elogGetTaskName());
         tx_thread_sleep(100);
     }
 }

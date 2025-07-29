@@ -81,7 +81,7 @@ void multiple_subscribers_example(void) {
   LOG_INIT();
   
   /* Subscribe multiple outputs with different thresholds */
-  LOG_SUBSCRIBE(log_console_subscriber, LOG_LEVEL_INFO);    /* Console: INFO and above */
+  LOG_SUBSCRIBE(logConsoleSubscriber, LOG_LEVEL_INFO);    /* Console: INFO and above */
   LOG_SUBSCRIBE(file_subscriber, LOG_LEVEL_WARNING);        /* File: WARNING and above */
   LOG_SUBSCRIBE(memory_subscriber, LOG_LEVEL_ERROR);        /* Memory: ERROR and above */
   
@@ -103,7 +103,7 @@ void subscriber_management_example(void) {
   LOG_INIT();
   
   /* Add subscribers */
-  LOG_SUBSCRIBE(log_console_subscriber, LOG_LEVEL_DEBUG);
+  LOG_SUBSCRIBE(logConsoleSubscriber, LOG_LEVEL_DEBUG);
   LOG_SUBSCRIBE(network_subscriber, LOG_LEVEL_ERROR);
   
   LOG_ERROR("Error before unsubscribing network");
@@ -212,7 +212,7 @@ void thread_aware_logging_example(void) {
   
   /* Initialize with thread-aware console subscriber */
   LOG_INIT();
-  LOG_SUBSCRIBE(log_console_subscriber_with_thread, LOG_LEVEL_DEBUG);
+  LOG_SUBSCRIBE(logConsoleSubscriberWithThread, LOG_LEVEL_DEBUG);
   
   LOG_DEBUG("This message includes task name in output");
   LOG_INFO("Task information: %s", elog_get_task_name());

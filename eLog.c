@@ -14,10 +14,17 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <inttypes.h> // For PRIu32 macro
+#include "tx_api.h" // Include ThreadX API for _tx_thread_system_state
+#include "tx_thread.h" // Include ThreadX thread header for _tx_thread_system_state
 
 /* ========================================================================== */
 /* Enhanced Logging Internal State */
 /* ========================================================================== */
+
+#if defined(ELOG_RTOS_TYPE)
+volatile bool RTOS_READY = false; // Flag to indicate if RTOS is ready
+#endif
 
 /**
  * @brief Subscriber entry structure
@@ -48,7 +55,7 @@ static int s_mutex_initialized = 0;
 /**
  * @brief Initialize the enhanced logging system
  */
-void log_init(void) {
+void logInit(void) {
   /* Clear all subscribers */
   for (int i = 0; i < LOG_MAX_SUBSCRIBERS; i++) {
     s_subscribers[i].fn = NULL;
@@ -60,8 +67,9 @@ void log_init(void) {
 #if (ELOG_THREAD_SAFE == 1)
   /* Initialize mutex for thread safety */
   if (!s_mutex_initialized) {
-    if (elog_mutex_create(&s_log_mutex) == ELOG_THREAD_OK) {
+    if (elogMutexCreate(&s_log_mutex) == ELOG_THREAD_OK) {
       s_mutex_initialized = 1;
+      elogMutexGive(&s_log_mutex);  // Ensure mutex is available
     }
   }
 #endif
@@ -73,7 +81,7 @@ void log_init(void) {
  * @param threshold: Minimum level to send to this subscriber
  * @return Error code
  */
-log_err_t log_subscribe(log_subscriber_t fn, log_level_t threshold) {
+log_err_t logSubscribe(log_subscriber_t fn, log_level_t threshold) {
   if (s_num_subscribers >= LOG_MAX_SUBSCRIBERS) {
     return LOG_ERR_SUBSCRIBERS_EXCEEDED;
   }
@@ -101,7 +109,7 @@ log_err_t log_subscribe(log_subscriber_t fn, log_level_t threshold) {
  * @param fn: Function to unsubscribe
  * @return Error code
  */
-log_err_t log_unsubscribe(log_subscriber_t fn) {
+log_err_t logUnsubscribe(log_subscriber_t fn) {
   for (int i = 0; i < s_num_subscribers; i++) {
     if (s_subscribers[i].fn == fn && s_subscribers[i].active) {
       s_subscribers[i].active = 0;
@@ -116,7 +124,7 @@ log_err_t log_unsubscribe(log_subscriber_t fn) {
  * @param level: Log level
  * @return String representation of level
  */
-const char *log_level_name(log_level_t level) {
+const char *logLevelName(log_level_t level) {
   switch (level) {
     case LOG_LEVEL_TRACE:    return "TRACE";
     case LOG_LEVEL_DEBUG:    return "DEBUG";
@@ -133,7 +141,7 @@ const char *log_level_name(log_level_t level) {
  * @brief Get the automatically calculated threshold level
  * @return The LOG_AUTO_THRESHOLD value
  */
-log_level_t log_get_auto_threshold(void) {
+log_level_t logGetAutoThreshold(void) {
   return LOG_AUTO_THRESHOLD;
 }
 
@@ -143,7 +151,7 @@ log_level_t log_get_auto_threshold(void) {
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void log_message(log_level_t level, const char *fmt, ...) {
+void logMessage(log_level_t level, const char *fmt, ...) {
   va_list args;
   
   /* Format the message */
@@ -168,7 +176,7 @@ void log_message(log_level_t level, const char *fmt, ...) {
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void log_message_with_location(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
+void logMessageWithLocation(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
   va_list args;
   char temp_buffer[LOG_MAX_MESSAGE_LENGTH - 64];  /* Reserve space for location info */
   
@@ -200,7 +208,7 @@ void log_message_with_location(log_level_t level, const char *file, const char *
  * @param level: Severity level of the message
  * @param msg: Formatted message string
  */
-void log_console_subscriber(log_level_t level, const char *msg) {
+void logConsoleSubscriber(log_level_t level, const char *msg) {
 #if USE_COLOR
   /* Color codes for different log levels */
   const char* colors[] = {
@@ -212,15 +220,15 @@ void log_console_subscriber(log_level_t level, const char *msg) {
     [LOG_LEVEL_CRITICAL] = LOG_BOLD(LOG_COLOR_RED),       /* Bold Red for critical */
     [LOG_LEVEL_ALWAYS]   = LOG_BOLD("37")                 /* Bold White for always */
   };
-  
+
   if (level >= LOG_LEVEL_TRACE && level <= LOG_LEVEL_ALWAYS) {
-    printf("%s%s: %s%s\n", colors[level], log_level_name(level), msg, LOG_RESET_COLOR);
+    printf("%s%s: %s%s\n", colors[level], logLevelName(level), msg, LOG_RESET_COLOR);
   } else {
-    printf("%s: %s\n", log_level_name(level), msg);
+    printf("%s: %s\n", logLevelName(level), msg);
   }
 #else
   /* No color version */
-  printf("%s: %s\n", log_level_name(level), msg);
+  printf("%s: %s\n", logLevelName(level), msg);
 #endif
 }
 
@@ -235,7 +243,7 @@ void log_console_subscriber(log_level_t level, const char *msg) {
  * @param mutex: Pointer to mutex handle
  * @return Thread operation result
  */
-elog_thread_result_t elog_mutex_create(elog_mutex_t *mutex) {
+elog_thread_result_t elogMutexCreate(elog_mutex_t *mutex) {
   if (!mutex) return ELOG_THREAD_ERROR;
 
 #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
@@ -281,8 +289,13 @@ elog_thread_result_t elog_mutex_create(elog_mutex_t *mutex) {
  * @param timeout_ms: Timeout in milliseconds
  * @return Thread operation result
  */
-elog_thread_result_t elog_mutex_take(elog_mutex_t *mutex, uint32_t timeout_ms) {
+elog_thread_result_t elogMutexTake(elog_mutex_t *mutex, uint32_t timeout_ms) {
   if (!mutex) return ELOG_THREAD_ERROR;
+
+  // Check if the system state is 0
+  if (!RTOS_READY) {
+    return ELOG_THREAD_OK;
+  }
 
 #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
   #ifdef INC_FREERTOS_H
@@ -324,8 +337,13 @@ elog_thread_result_t elog_mutex_take(elog_mutex_t *mutex, uint32_t timeout_ms) {
  * @param mutex: Pointer to mutex handle
  * @return Thread operation result
  */
-elog_thread_result_t elog_mutex_give(elog_mutex_t *mutex) {
+elog_thread_result_t elogMutexGive(elog_mutex_t *mutex) {
   if (!mutex) return ELOG_THREAD_ERROR;
+  #if defined(ELOG_RTOS_TYPE)
+  if (!RTOS_READY) {
+    return ELOG_THREAD_OK;
+  }
+  #endif
 
 #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
   #ifdef INC_FREERTOS_H
@@ -363,7 +381,7 @@ elog_thread_result_t elog_mutex_give(elog_mutex_t *mutex) {
  * @param mutex: Pointer to mutex handle
  * @return Thread operation result
  */
-elog_thread_result_t elog_mutex_delete(elog_mutex_t *mutex) {
+elog_thread_result_t elogMutexDelete(elog_mutex_t *mutex) {
   if (!mutex) return ELOG_THREAD_ERROR;
 
 #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
@@ -400,19 +418,31 @@ elog_thread_result_t elog_mutex_delete(elog_mutex_t *mutex) {
 }
 
 /**
+ * @brief Update the RTOS_READY flag
+ * @param ready: Boolean value indicating if RTOS is ready (1) or not (0)
+ */
+void elogUpdateRTOSReady(bool ready) {
+#if (ELOG_THREAD_SAFE == 1)
+  RTOS_READY = ready;
+#else
+  (void)ready; // No RTOS, no action needed
+#endif
+}
+
+/**
  * @brief Thread-safe version of log_message
  * @param level: Severity level of the message
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void log_message_safe(log_level_t level, const char *fmt, ...) {
+void logMessageSafe(log_level_t level, const char *fmt, ...) {
   if (!s_mutex_initialized) {
     /* Fall back to non-thread-safe version */
     va_list args;
     va_start(args, fmt);
     vsnprintf(s_message_buffer, sizeof(s_message_buffer), fmt, args);
     va_end(args);
-    
+
     for (int i = 0; i < s_num_subscribers; i++) {
       if (s_subscribers[i].active && level >= s_subscribers[i].threshold) {
         s_subscribers[i].fn(level, s_message_buffer);
@@ -422,26 +452,30 @@ void log_message_safe(log_level_t level, const char *fmt, ...) {
   }
 
   /* Take mutex with timeout */
-  if (elog_mutex_take(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
+  if (elogMutexTake(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
     return; /* Skip logging if can't get mutex */
   }
 
   va_list args;
-  
+
   /* Format the message */
   va_start(args, fmt);
   vsnprintf(s_message_buffer, sizeof(s_message_buffer), fmt, args);
   va_end(args);
-  
+
   /* Send to all active subscribers */
   for (int i = 0; i < s_num_subscribers; i++) {
+    // printf("[DEBUG] Checking subscriber %d: active=%d, threshold=%d, level=%d.\n", i, s_subscribers[i].active, s_subscribers[i].threshold, level);
     if (s_subscribers[i].active && level >= s_subscribers[i].threshold) {
+      // printf("[DEBUG] Sending message to subscriber %d.\n", i);
       s_subscribers[i].fn(level, s_message_buffer);
     }
   }
 
   /* Give mutex */
-  elog_mutex_give(&s_log_mutex);
+  if (elogMutexGive(&s_log_mutex) != ELOG_THREAD_OK) {
+    // printf("[DEBUG] Failed to release mutex.\n");
+  }
 }
 
 /**
@@ -453,7 +487,7 @@ void log_message_safe(log_level_t level, const char *fmt, ...) {
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void log_message_with_location_safe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
+void logMessageWithLocationSafe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
   if (!s_mutex_initialized) {
     /* Fall back to non-thread-safe version */
     va_list args;
@@ -477,7 +511,7 @@ void log_message_with_location_safe(log_level_t level, const char *file, const c
   }
 
   /* Take mutex with timeout */
-  if (elog_mutex_take(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
+  if (elogMutexTake(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
     return; /* Skip logging if can't get mutex */
   }
 
@@ -503,7 +537,7 @@ void log_message_with_location_safe(log_level_t level, const char *file, const c
   }
 
   /* Give mutex */
-  elog_mutex_give(&s_log_mutex);
+  elogMutexGive(&s_log_mutex);
 }
 
 /**
@@ -512,14 +546,14 @@ void log_message_with_location_safe(log_level_t level, const char *file, const c
  * @param threshold: Minimum level to send to this subscriber
  * @return Error code
  */
-log_err_t log_subscribe_safe(log_subscriber_t fn, log_level_t threshold) {
+log_err_t logSubscribeSafe(log_subscriber_t fn, log_level_t threshold) {
   if (!s_mutex_initialized) {
     /* Fall back to non-thread-safe version */
-    return log_subscribe(fn, threshold);
+    return logSubscribe(fn, threshold);
   }
 
   /* Take mutex with timeout */
-  if (elog_mutex_take(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
+  if (elogMutexTake(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
     return LOG_ERR_SUBSCRIBERS_EXCEEDED; /* Return error if can't get mutex */
   }
 
@@ -546,7 +580,7 @@ log_err_t log_subscribe_safe(log_subscriber_t fn, log_level_t threshold) {
 
 exit:
   /* Give mutex */
-  elog_mutex_give(&s_log_mutex);
+  elogMutexGive(&s_log_mutex);
   return result;
 }
 
@@ -555,14 +589,14 @@ exit:
  * @param fn: Function to unsubscribe
  * @return Error code
  */
-log_err_t log_unsubscribe_safe(log_subscriber_t fn) {
+log_err_t logUnsubscribeSafe(log_subscriber_t fn) {
   if (!s_mutex_initialized) {
     /* Fall back to non-thread-safe version */
-    return log_unsubscribe(fn);
+    return logUnsubscribe(fn);
   }
 
   /* Take mutex with timeout */
-  if (elog_mutex_take(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
+  if (elogMutexTake(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
     return LOG_ERR_NOT_SUBSCRIBED; /* Return error if can't get mutex */
   }
 
@@ -577,7 +611,7 @@ log_err_t log_unsubscribe_safe(log_subscriber_t fn) {
   }
 
   /* Give mutex */
-  elog_mutex_give(&s_log_mutex);
+  elogMutexGive(&s_log_mutex);
   return result;
 }
 
@@ -585,7 +619,7 @@ log_err_t log_unsubscribe_safe(log_subscriber_t fn) {
  * @brief Get current task name (RTOS-specific)
  * @return Task name string or "UNKNOWN" if not available
  */
-const char *elog_get_task_name(void) {
+const char *elogGetTaskName(void) {
 #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
   #ifdef INC_FREERTOS_H
     TaskHandle_t current_task = xTaskGetCurrentTaskHandle();
@@ -615,7 +649,7 @@ const char *elog_get_task_name(void) {
  * @brief Get current task ID (RTOS-specific)
  * @return Task ID or 0 if not available
  */
-uint32_t elog_get_task_id(void) {
+uint32_t elogGetTaskId(void) {
 #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
   #ifdef INC_FREERTOS_H
     TaskHandle_t current_task = xTaskGetCurrentTaskHandle();
@@ -642,7 +676,7 @@ uint32_t elog_get_task_id(void) {
  * @param level: Severity level of the message
  * @param msg: Formatted message string
  */
-void log_console_subscriber_with_thread(log_level_t level, const char *msg) {
+void logConsoleSubscriberWithThread(log_level_t level, const char *msg) {
 #if USE_COLOR
   /* Color codes for different log levels */
   const char* colors[] = {
@@ -656,13 +690,13 @@ void log_console_subscriber_with_thread(log_level_t level, const char *msg) {
   };
   
   if (level >= LOG_LEVEL_TRACE && level <= LOG_LEVEL_ALWAYS) {
-    printf("%s%s[%s]: %s%s\n", colors[level], log_level_name(level), elog_get_task_name(), msg, LOG_RESET_COLOR);
+    printf("%s%s[%s]: %s%s\n", colors[level], logLevelName(level), elogGetTaskName(), msg, LOG_RESET_COLOR);
   } else {
-    printf("%s[%s]: %s\n", log_level_name(level), elog_get_task_name(), msg);
+    printf("%s[%s]: %s\n", logLevelName(level), elogGetTaskName(), msg);
   }
 #else
   /* No color version */
-  printf("%s[%s]: %s\n", log_level_name(level), elog_get_task_name(), msg);
+  printf("%s[%s]: %s\n", logLevelName(level), elogGetTaskName(), msg);
 #endif
 }
 
@@ -675,7 +709,7 @@ void log_console_subscriber_with_thread(log_level_t level, const char *msg) {
 #if (ELOG_THREAD_SAFE == 0)
 /* Fallback implementations when threading is disabled - just call regular versions */
 
-void log_message_safe(log_level_t level, const char *fmt, ...) {
+void logMessageSafe(log_level_t level, const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
   vsnprintf(s_message_buffer, sizeof(s_message_buffer), fmt, args);
@@ -688,7 +722,7 @@ void log_message_safe(log_level_t level, const char *fmt, ...) {
   }
 }
 
-void log_message_with_location_safe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
+void logMessageWithLocationSafe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
   va_list args;
   char temp_buffer[LOG_MAX_MESSAGE_LENGTH - 64];  /* Reserve space for location info */
   
@@ -708,12 +742,43 @@ void log_message_with_location_safe(log_level_t level, const char *file, const c
   }
 }
 
-log_err_t log_subscribe_safe(log_subscriber_t fn, log_level_t threshold) {
-  return log_subscribe(fn, threshold);
+log_err_t logSubscribeSafe(log_subscriber_t fn, log_level_t threshold) {
+  return logSubscribe(fn, threshold);
 }
 
-log_err_t log_unsubscribe_safe(log_subscriber_t fn) {
-  return log_unsubscribe(fn);
+log_err_t logUnsubscribeSafe(log_subscriber_t fn) {
+  return logUnsubscribe(fn);
 }
 
 #endif /* ELOG_THREAD_SAFE == 0 */
+
+#if (ELOG_THREAD_SAFE == 0)
+#include <pthread.h>
+static pthread_mutex_t s_log_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+elog_thread_result_t elogMutexCreate(elog_mutex_t *mutex) {
+  (void)mutex; // Mutex is statically initialized
+  return ELOG_THREAD_OK;
+}
+
+elog_thread_result_t elogMutexTake(elog_mutex_t *mutex, uint32_t timeout_ms) {
+  (void)timeout_ms; // Timeout not supported in bare-metal implementation
+  if (pthread_mutex_lock(&s_log_mutex) == 0) {
+    return ELOG_THREAD_OK;
+  }
+  return ELOG_THREAD_ERROR;
+}
+
+elog_thread_result_t elogMutexGive(elog_mutex_t *mutex) {
+  (void)mutex; // Mutex is statically initialized
+  if (pthread_mutex_unlock(&s_log_mutex) == 0) {
+    return ELOG_THREAD_OK;
+  }
+  return ELOG_THREAD_ERROR;
+}
+
+elog_thread_result_t elogMutexDelete(elog_mutex_t *mutex) {
+  (void)mutex; // Mutex is statically initialized
+  return ELOG_THREAD_OK;
+}
+#endif

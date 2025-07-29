@@ -1,11 +1,7 @@
-# eLog - Enhanced Logging System for Embedded MCU Projects
+# Updated eLog - Enhanced Logging System for Embedded MCU Projects
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https## 🧵 RTOS Threading Configuration
-
-> ⚠️ **CONFIGURATION ORDER WARNING**: All custom `#define` statements must be placed **AFTER line 28** in `eLog.h` where RTOS type constants (`ELOG_RTOS_FREERTOS`, `ELOG_RTOS_THREADX`, etc.) are defined. Incorrect placement will result in "undefined identifier" compilation errors.
-
-### Thread Safety Optionsimg.shields.io/badge/Platform-ARM%20Cortex--M-blue.svg)](https://developer.arm.com/architectures/cpu-architecture/m-profile)
+[![Platform](https://img.shields.io/badge/Platform-ARM%20Cortex--M-blue.svg)](https://developer.arm.com/architectures/cpu-architecture/m-profile)
 [![C Standard](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
 
 A comprehensive, lightweight, and feature-rich logging system designed specifically for embedded microcontroller projects. Inspired by uLog but significantly enhanced with modern features, backwards compatibility, and embedded-first design.
@@ -15,7 +11,7 @@ A comprehensive, lightweight, and feature-rich logging system designed specifica
 ### ✨ Core Capabilities
 - **Multiple Subscribers**: Support for up to 6 concurrent logging outputs (console, file, memory buffer, network, etc.)
 - **Compile-time Optimization**: Individual log levels can be disabled at compile time for minimal footprint
-- **Color Support**: Built-in ANSI color coding for better terminal debugging experience  
+- **Color Support**: Built-in ANSI color coding for better terminal debugging experience
 - **Location Information**: Optional file/function/line information for debugging
 - **Zero External Dependencies**: Only requires standard C library (stdio.h, stdarg.h, string.h)
 
@@ -83,8 +79,6 @@ int main() {
 ### Configuration
 Configure debug levels in `eLog.h`:
 
-> ⚠️ **IMPORTANT**: Any custom configuration must be placed **AFTER line 29** in `eLog.h` where the RTOS type constants are defined. Placing configuration before this line will cause compilation errors due to undefined RTOS constants.
-
 ```c
 #define DEBUG_INFO YES      /* Information messages */
 #define DEBUG_WARN YES      /* Warning messages */
@@ -95,7 +89,7 @@ Configure debug levels in `eLog.h`:
 #define DEBUG_ALWAYS YES    /* Always logged messages */
 ```
 
-## 🛠️ Advanced Usage
+## ⚙️ Advanced Usage
 
 ### Custom Subscribers
 ```c
@@ -114,7 +108,7 @@ LOG_SUBSCRIBE(my_file_logger, LOG_LEVEL_ERROR);
 LOG_INIT();
 
 // Console for all messages
-LOG_SUBSCRIBE(log_console_subscriber, LOG_LEVEL_DEBUG);
+LOG_SUBSCRIBE(logConsoleSubscriber, LOG_LEVEL_DEBUG);
 
 // File for errors only
 LOG_SUBSCRIBE(my_file_logger, LOG_LEVEL_ERROR);
@@ -270,17 +264,17 @@ int main(void) {
 ### Thread-Safe API Functions
 ```c
 /* Thread-safe versions (automatically used when ELOG_THREAD_SAFE=1) */
-void log_message_safe(log_level_t level, const char *fmt, ...);
-void log_message_with_location_safe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
-log_err_t log_subscribe_safe(log_subscriber_t fn, log_level_t threshold);
-log_err_t log_unsubscribe_safe(log_subscriber_t fn);
+void logMessageSafe(log_level_t level, const char *fmt, ...);
+void logMessageWithLocationSafe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
+log_err_t logSubscribeSafe(log_subscriber_t fn, log_level_t threshold);
+log_err_t logUnsubscribeSafe(log_subscriber_t fn);
 
 /* Task information functions */
-const char *elog_get_task_name(void);    /* Get current task name */
-uint32_t elog_get_task_id(void);         /* Get current task ID */
+const char *elogGetTaskName(void);    /* Get current task name */
+uint32_t elogGetTaskId(void);         /* Get current task ID */
 
 /* Thread-aware console subscriber */
-void log_console_subscriber_with_thread(log_level_t level, const char *msg);
+void logConsoleSubscriberWithThread(log_level_t level, const char *msg);
 ```
 
 ### Performance Considerations
@@ -288,6 +282,10 @@ void log_console_subscriber_with_thread(log_level_t level, const char *msg);
 - **Memory Overhead**: Additional ~32-64 bytes for mutex storage
 - **Timeout Behavior**: Logging calls will timeout and skip if mutex cannot be acquired
 - **RTOS Integration**: Minimal impact on existing RTOS task scheduling
+
+## 🔧 New Features
+- **`elogUpdateRTOSReady` Function**: Allows dynamic updates to the RTOS readiness flag, enabling or disabling thread-safe operations based on runtime conditions.
+- **Fallback Mutex Implementation**: For non-RTOS environments, a `pthread_mutex`-based implementation ensures thread safety without requiring an RTOS.
 
 ## �🔧 Configuration Options
 
