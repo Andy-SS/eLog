@@ -71,7 +71,7 @@ static inline const char *debug_get_filename(const char *fullpath) {
 #define DEBUG_WARN YES      /* Warning messages (BROWN) */
 #define DEBUG_ERR  YES      /* Error messages (RED) */
 #define DEBUG_LOG  YES      /* Debug messages (CYAN) */
-#define DEBUG_TRACE NO      /* Trace messages (BLUE) - very verbose, usually disabled in production */
+#define DEBUG_TRACE YES      /* Trace messages (BLUE) - very verbose, usually disabled in production */
 #define DEBUG_CRITICAL YES  /* Critical error messages (RED BOLD) */
 #define DEBUG_ALWAYS YES    /* Always logged messages (WHITE BOLD) */
 
