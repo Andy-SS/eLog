@@ -25,7 +25,6 @@ A comprehensive, lightweight, and feature-rich logging system designed specifica
 
 ### 🎯 Embedded-Specific Features
 - **Per-File Log Thresholds**: Set log levels for individual source files/modules at runtime for fine-grained control
-- **Backwards Compatibility**: Drop-in replacement for existing `printIF()`, `printERR()`, `printLOG()` macros
 - **Memory Efficient**: 128-byte message buffer, optimized for resource-constrained systems
 - **RTOS Ready**: Thread-safe design suitable for FreeRTOS, ThreadX, and other RTOSs
 - **MCU Error Codes**: Comprehensive set of error codes for common MCU subsystems
