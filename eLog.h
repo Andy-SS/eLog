@@ -168,10 +168,10 @@ typedef enum {
 } elog_thread_result_t;
 
 /* Thread safety functions */
-elog_thread_result_t elogMutexCreate(elog_mutex_t *mutex);
-elog_thread_result_t elogMutexTake(elog_mutex_t *mutex, uint32_t timeout_ms);
-elog_thread_result_t elogMutexGive(elog_mutex_t *mutex);
-elog_thread_result_t elogMutexDelete(elog_mutex_t *mutex);
+elog_thread_result_t elog_mutex_create(elog_mutex_t *mutex);
+elog_thread_result_t elog_mutex_take(elog_mutex_t *mutex, uint32_t timeout_ms);
+elog_thread_result_t elog_mutex_give(elog_mutex_t *mutex);
+elog_thread_result_t elog_mutex_delete(elog_mutex_t *mutex);
 
 #endif /* ELOG_THREAD_SAFE */
 

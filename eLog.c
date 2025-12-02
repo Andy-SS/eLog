@@ -77,9 +77,9 @@ void elog_init(void) {
 #if (ELOG_THREAD_SAFE == 1)
   /* Initialize mutex for thread safety */
   if (!s_mutex_initialized) {
-    if (elogMutexCreate(&s_log_mutex) == ELOG_THREAD_OK) {
+    if (elog_mutex_create(&s_log_mutex) == ELOG_THREAD_OK) {
       s_mutex_initialized = 1;
-      elogMutexGive(&s_log_mutex);  // Ensure mutex is available
+      elog_mutex_give(&s_log_mutex);  // Ensure mutex is available
     }
   }
 #endif
@@ -257,7 +257,7 @@ void elog_console_subscriber(log_level_t level, const char *msg) {
  * @param mutex: Pointer to mutex handle
  * @return Thread operation result
  */
-elog_thread_result_t elogMutexCreate(elog_mutex_t *mutex) {
+elog_thread_result_t elog_mutex_create(elog_mutex_t *mutex) {
   if (!mutex) return ELOG_THREAD_ERROR;
 
 #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
@@ -303,7 +303,7 @@ elog_thread_result_t elogMutexCreate(elog_mutex_t *mutex) {
  * @param timeout_ms: Timeout in milliseconds
  * @return Thread operation result
  */
-elog_thread_result_t elogMutexTake(elog_mutex_t *mutex, uint32_t timeout_ms) {
+elog_thread_result_t elog_mutex_take(elog_mutex_t *mutex, uint32_t timeout_ms) {
   if (!mutex) return ELOG_THREAD_ERROR;
 
   // Check if the system state is 0
@@ -351,7 +351,7 @@ elog_thread_result_t elogMutexTake(elog_mutex_t *mutex, uint32_t timeout_ms) {
  * @param mutex: Pointer to mutex handle
  * @return Thread operation result
  */
-elog_thread_result_t elogMutexGive(elog_mutex_t *mutex) {
+elog_thread_result_t elog_mutex_give(elog_mutex_t *mutex) {
   if (!mutex) return ELOG_THREAD_ERROR;
   #if defined(ELOG_RTOS_TYPE)
   if (!RTOS_READY) {
@@ -395,7 +395,7 @@ elog_thread_result_t elogMutexGive(elog_mutex_t *mutex) {
  * @param mutex: Pointer to mutex handle
  * @return Thread operation result
  */
-elog_thread_result_t elogMutexDelete(elog_mutex_t *mutex) {
+elog_thread_result_t elog_mutex_delete(elog_mutex_t *mutex) {
   if (!mutex) return ELOG_THREAD_ERROR;
 
 #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
@@ -466,7 +466,7 @@ void elog_message_safe(log_level_t level, const char *fmt, ...) {
   }
 
   /* Take mutex with timeout */
-  if (elogMutexTake(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
+  if (elog_mutex_take(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
     return; /* Skip logging if can't get mutex */
   }
 
@@ -487,7 +487,7 @@ void elog_message_safe(log_level_t level, const char *fmt, ...) {
   }
 
   /* Give mutex */
-  if (elogMutexGive(&s_log_mutex) != ELOG_THREAD_OK) {
+  if (elog_mutex_give(&s_log_mutex) != ELOG_THREAD_OK) {
     // printf("[DEBUG] Failed to release mutex.\n");
   }
 }
@@ -525,7 +525,7 @@ void elog_message_with_location_safe(log_level_t level, const char *file, const 
   }
 
   /* Take mutex with timeout */
-  if (elogMutexTake(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
+  if (elog_mutex_take(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
     return; /* Skip logging if can't get mutex */
   }
 
@@ -551,7 +551,7 @@ void elog_message_with_location_safe(log_level_t level, const char *file, const 
   }
 
   /* Give mutex */
-  elogMutexGive(&s_log_mutex);
+  elog_mutex_give(&s_log_mutex);
 }
 
 /**
@@ -567,7 +567,7 @@ log_err_t elog_subscribe_safe(log_subscriber_t fn, log_level_t threshold) {
   }
 
   /* Take mutex with timeout */
-  if (elogMutexTake(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
+  if (elog_mutex_take(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
     return LOG_ERR_SUBSCRIBERS_EXCEEDED; /* Return error if can't get mutex */
   }
 
@@ -594,7 +594,7 @@ log_err_t elog_subscribe_safe(log_subscriber_t fn, log_level_t threshold) {
 
 exit:
   /* Give mutex */
-  elogMutexGive(&s_log_mutex);
+  elog_mutex_give(&s_log_mutex);
   return result;
 }
 
@@ -610,7 +610,7 @@ log_err_t elog_unsubscribe_safe(log_subscriber_t fn) {
   }
 
   /* Take mutex with timeout */
-  if (elogMutexTake(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
+  if (elog_mutex_take(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK) {
     return LOG_ERR_NOT_SUBSCRIBED; /* Return error if can't get mutex */
   }
 
@@ -625,7 +625,7 @@ log_err_t elog_unsubscribe_safe(log_subscriber_t fn) {
   }
 
   /* Give mutex */
-  elogMutexGive(&s_log_mutex);
+  elog_mutex_give(&s_log_mutex);
   return result;
 }
 
@@ -770,12 +770,12 @@ log_err_t elog_unsubscribe_safe(log_subscriber_t fn) {
 #include <pthread.h>
 static pthread_mutex_t s_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-elog_thread_result_t elogMutexCreate(elog_mutex_t *mutex) {
+elog_thread_result_t elog_mutex_create(elog_mutex_t *mutex) {
   (void)mutex; // Mutex is statically initialized
   return ELOG_THREAD_OK;
 }
 
-elog_thread_result_t elogMutexTake(elog_mutex_t *mutex, uint32_t timeout_ms) {
+elog_thread_result_t elog_mutex_take(elog_mutex_t *mutex, uint32_t timeout_ms) {
   (void)timeout_ms; // Timeout not supported in bare-metal implementation
   if (pthread_mutex_lock(&s_log_mutex) == 0) {
     return ELOG_THREAD_OK;
@@ -783,7 +783,7 @@ elog_thread_result_t elogMutexTake(elog_mutex_t *mutex, uint32_t timeout_ms) {
   return ELOG_THREAD_ERROR;
 }
 
-elog_thread_result_t elogMutexGive(elog_mutex_t *mutex) {
+elog_thread_result_t elog_mutex_give(elog_mutex_t *mutex) {
   (void)mutex; // Mutex is statically initialized
   if (pthread_mutex_unlock(&s_log_mutex) == 0) {
     return ELOG_THREAD_OK;
@@ -791,7 +791,7 @@ elog_thread_result_t elogMutexGive(elog_mutex_t *mutex) {
   return ELOG_THREAD_ERROR;
 }
 
-elog_thread_result_t elogMutexDelete(elog_mutex_t *mutex) {
+elog_thread_result_t elog_mutex_delete(elog_mutex_t *mutex) {
   (void)mutex; // Mutex is statically initialized
   return ELOG_THREAD_OK;
 }
