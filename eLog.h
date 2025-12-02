@@ -1,7 +1,7 @@
 /***********************************************************
 * @file	eLog.h
 * @author	Andy Chen (clgm216@gmail.com)
-* @version	0.02
+* @version	0.03
 * @date	2024-09-10
 * @brief  Enhanced logging system inspired by uLog with multiple subscribers
 *         INDEPENDENT HEADER - No external dependencies (except standard C)
@@ -76,7 +76,7 @@ static inline const char *debug_get_filename(const char *fullpath) {
 #define DEBUG_ALWAYS YES    /* Always logged messages (WHITE BOLD) */
 
 /* Filename Support Configuration */
-#define ENABLE_DEBUG_MESSAGES_WITH_FILE_NAME 0
+#define ENABLE_DEBUG_MESSAGES_WITH_FILE_NAME 1
 
 /* Auto-calculate the lowest enabled log level for enhanced logging */
 #if (DEBUG_TRACE == YES)
@@ -318,53 +318,110 @@ typedef enum {
 /* ========================================================================== */
 
 /* Enhanced logging functions */
-void logInit(void);
-log_err_t logSubscribe(log_subscriber_t fn, log_level_t threshold);
-log_err_t logUnsubscribe(log_subscriber_t fn);
-const char *logLevelName(log_level_t level);
-void logMessage(log_level_t level, const char *fmt, ...);
-void logMessageWithLocation(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
-log_level_t logGetAutoThreshold(void);
+/**
+ * @brief Initialize the enhanced logging system
+ */
+void elog_init(void);
+
+/**
+ * @brief Subscribe a function to receive log messages
+ * @param fn: Function to call for each log message
+ * @param threshold: Minimum level to send to this subscriber
+ * @return Error code
+ */
+log_err_t elog_subscribe(log_subscriber_t fn, log_level_t threshold);
+
+/**
+ * @brief Unsubscribe a function from receiving log messages
+ * @param fn: Function to unsubscribe
+ * @return Error code
+ */
+log_err_t elog_unsubscribe(log_subscriber_t fn);
+
+/**
+ * @brief Get the string name of a log level
+ * @param level: Log level
+ * @return String name of the log level
+ */
+const char *elog_level_name(log_level_t level);
+
+/**
+ * @brief Log a message
+ * @param level: Severity level of the message
+ * @param fmt: Format string (printf-style)
+ */
+void elog_message(log_level_t level, const char *fmt, ...);
+
+/**
+ * @brief Log a message with source location information
+ * @param level: Severity level of the message
+ * @param file: Source file name
+ * @param func: Function name
+ * @param line: Line number
+ * @param fmt: Format string (printf-style)
+ */
+void elog_message_with_location(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
+
+/**
+ * @brief Get the automatically calculated threshold level
+ * @return The LOG_AUTO_THRESHOLD value
+ */
+log_level_t elog_get_auto_threshold(void);
+
+/**
+ * @brief Set log threshold for a specific source file (module)
+ * @param filename: Short filename (e.g. "sensor.c")
+ * @param threshold: Log level threshold
+ * @return LOG_ERR_NONE on success
+ */
+log_err_t elog_set_file_threshold(const char *filename, log_level_t threshold);
+
+/**
+ * @brief Get log threshold for a specific source file (module)
+ * @param filename: Short filename (e.g. "sensor.c")
+ * @return threshold, or LOG_AUTO_THRESHOLD if not set
+ */
+log_level_t elog_get_file_threshold(const char *filename);
 
 /* Thread-safe logging functions (always declared, but may have fallback implementations) */
-void logMessageSafe(log_level_t level, const char *fmt, ...);
-void logMessageWithLocationSafe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
-log_err_t logSubscribeSafe(log_subscriber_t fn, log_level_t threshold);
-log_err_t logUnsubscribeSafe(log_subscriber_t fn);
+void elog_message_safe(log_level_t level, const char *fmt, ...);
+void elog_message_with_location_safe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
+log_err_t elog_subscribe_safe(log_subscriber_t fn, log_level_t threshold);
+log_err_t elog_unsubscribe_safe(log_subscriber_t fn);
 
 #if (ELOG_THREAD_SAFE == 1)
 /* Thread info functions for enhanced debugging (only available when threading enabled) */
-const char *elogGetTaskName(void);
-uint32_t elogGetTaskId(void);
+const char *elog_get_task_name(void);
+uint32_t elog_get_task_id(void);
 
 /* Thread-aware console subscriber */
-extern void logConsoleSubscriberWithThread(log_level_t level, const char *msg);
+extern void elog_console_subscriber_with_thread(log_level_t level, const char *msg);
 #endif
 
 /* Thread-safe aliases - automatically select based on ELOG_THREAD_SAFE */
 #if (ELOG_THREAD_SAFE == 1)
-  #define LOG_MESSAGE(level, ...) logMessageSafe(level, __VA_ARGS__)
-  #define LOG_MESSAGE_WITH_LOCATION(level, file, func, line, ...) logMessageWithLocationSafe(level, file, func, line, __VA_ARGS__)
-  #define LOG_SUBSCRIBE_THREAD_SAFE(fn, level) logSubscribeSafe(fn, level)
-  #define LOG_UNSUBSCRIBE_THREAD_SAFE(fn) logUnsubscribeSafe(fn)
+  #define LOG_MESSAGE(level, ...) elog_message_safe(level, __VA_ARGS__)
+  #define LOG_MESSAGE_WITH_LOCATION(level, file, func, line, ...) elog_message_with_location_safe(level, file, func, line, __VA_ARGS__)
+  #define LOG_SUBSCRIBE_THREAD_SAFE(fn, level) elog_subscribe_safe(fn, level)
+  #define LOG_UNSUBSCRIBE_THREAD_SAFE(fn) elog_unsubscribe_safe(fn)
 #else
-  #define LOG_MESSAGE(level, ...) logMessage(level, __VA_ARGS__)
-  #define LOG_MESSAGE_WITH_LOCATION(level, file, func, line, ...) logMessageWithLocation(level, file, func, line, __VA_ARGS__)
-  #define LOG_SUBSCRIBE_THREAD_SAFE(fn, level) logSubscribe(fn, level)
-  #define LOG_UNSUBSCRIBE_THREAD_SAFE(fn) logUnsubscribe(fn)
+  #define LOG_MESSAGE(level, ...) elog_message(level, __VA_ARGS__)
+  #define LOG_MESSAGE_WITH_LOCATION(level, file, func, line, ...) elog_message_with_location(level, file, func, line, __VA_ARGS__)
+  #define LOG_SUBSCRIBE_THREAD_SAFE(fn, level) elog_subscribe(fn, level)
+  #define LOG_UNSUBSCRIBE_THREAD_SAFE(fn) elog_unsubscribe(fn)
 #endif
 
 /* Enhanced logging core macros */
-#define LOG_INIT() logInit()
+#define LOG_INIT() elog_init()
 #define LOG_SUBSCRIBE(fn, level) LOG_SUBSCRIBE_THREAD_SAFE(fn, level)
 #define LOG_UNSUBSCRIBE(fn) LOG_UNSUBSCRIBE_THREAD_SAFE(fn)
-#define LOG_LEVEL_NAME(level) logLevelName(level)
+#define LOG_LEVEL_NAME(level) elog_level_name(level)
 
 /* Convenience setup macro with console subscriber */
-extern void logConsoleSubscriber(log_level_t level, const char *msg);
+extern void elog_console_subscriber(log_level_t level, const char *msg);
 #define LOG_INIT_WITH_CONSOLE() do { \
     LOG_INIT(); \
-    LOG_SUBSCRIBE(logConsoleSubscriber, LOG_AUTO_THRESHOLD); \
+    LOG_SUBSCRIBE(elog_console_subscriber, LOG_AUTO_THRESHOLD); \
 } while(0)
 
 /* Enhanced convenience macros with automatic threshold */
@@ -372,8 +429,8 @@ extern void logConsoleSubscriber(log_level_t level, const char *msg);
     LOG_INIT(); \
 } while(0)
 
-#define LOG_SUBSCRIBE_CONSOLE() LOG_SUBSCRIBE(logConsoleSubscriber, LOG_AUTO_THRESHOLD)
-#define LOG_SUBSCRIBE_CONSOLE_LEVEL(level) LOG_SUBSCRIBE(logConsoleSubscriber, level)
+#define LOG_SUBSCRIBE_CONSOLE() LOG_SUBSCRIBE(elog_console_subscriber, LOG_AUTO_THRESHOLD)
+#define LOG_SUBSCRIBE_CONSOLE_LEVEL(level) LOG_SUBSCRIBE(elog_console_subscriber, level)
 
 /* Ultimate convenience macro - initializes and subscribes console with auto threshold */
 #define LOG_INIT_WITH_CONSOLE_AUTO() do { \
@@ -385,10 +442,10 @@ extern void logConsoleSubscriber(log_level_t level, const char *msg);
 #if (ELOG_THREAD_SAFE == 1)
 #define LOG_INIT_WITH_THREAD_INFO() do { \
     LOG_INIT(); \
-    LOG_SUBSCRIBE(logConsoleSubscriberWithThread, LOG_AUTO_THRESHOLD); \
+    LOG_SUBSCRIBE(elog_console_subscriber_with_thread, LOG_AUTO_THRESHOLD); \
 } while(0)
 
-extern void logConsoleSubscriberWithThread(log_level_t level, const char *msg);
+extern void elog_console_subscriber_with_thread(log_level_t level, const char *msg);
 #endif
 
 /* Individual level macros - follow same pattern as legacy debug macros */
@@ -488,7 +545,7 @@ extern void logConsoleSubscriberWithThread(log_level_t level, const char *msg);
 /* ==========================================================================*/
 
 /* Color control for enhanced logging console subscriber */
-#define USE_COLOR 1  /* Set to 0 to disable colors in logConsoleSubscriber */
+#define USE_COLOR 1  /* Set to 0 to disable colors in elog_console_subscriber */
 #define LOG_COLOR_BLACK  "30"
 #define LOG_COLOR_RED    "31"
 #define LOG_COLOR_GREEN  "32"
@@ -583,6 +640,6 @@ extern void logConsoleSubscriberWithThread(log_level_t level, const char *msg);
  * @brief Update the RTOS_READY flag
  * @param ready: Boolean value indicating if RTOS is ready (1) or not (0)
  */
-void elogUpdateRTOSReady(bool ready);
+void elog_update_RTOS_ready(bool ready);
 
 #endif /* APP_DEBUG_H_ */

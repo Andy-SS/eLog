@@ -22,4 +22,16 @@
 #define BIT(x) (1 << (x)) // Create a bit mask
 #endif
 
+/* Endian swap macros */
+#ifndef SWAP16
+#define SWAP16(x) (uint16_t)((((x) & 0xFF00) >> 8) | (((x) & 0x00FF) << 8))
+#endif
+
+#ifndef SWAP32
+#define SWAP32(x) (uint32_t)((((x) & 0xFF000000) >> 24) | \
+                             (((x) & 0x00FF0000) >> 8)  | \
+                             (((x) & 0x0000FF00) << 8)  | \
+                             (((x) & 0x000000FF) << 24))
+#endif
+
 #endif /* BIT_UTILS_H */

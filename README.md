@@ -24,6 +24,7 @@ A comprehensive, lightweight, and feature-rich logging system designed specifica
 - **Zero Overhead**: Thread safety can be completely disabled for single-threaded applications
 
 ### 🎯 Embedded-Specific Features
+- **Per-File Log Thresholds**: Set log levels for individual source files/modules at runtime for fine-grained control
 - **Backwards Compatibility**: Drop-in replacement for existing `printIF()`, `printERR()`, `printLOG()` macros
 - **Memory Efficient**: 128-byte message buffer, optimized for resource-constrained systems
 - **RTOS Ready**: Thread-safe design suitable for FreeRTOS, ThreadX, and other RTOSs
@@ -89,7 +90,27 @@ Configure debug levels in `eLog.h`:
 #define DEBUG_ALWAYS YES    /* Always logged messages */
 ```
 
+### Per-File Log Level Example
+You can set log levels for specific source files (modules) at runtime:
+
+```c
+#include "eLog.h"
+
+void sensorInit(void) {
+    elog_set_file_threshold("sensor.c", LOG_LEVEL_DEBUG); // Enable debug logs for sensor.c only
+    LOG_INFO("Sensor initialized"); // Will be shown if threshold allows
+}
+```
+
 ## ⚙️ Advanced Usage
+
+### Per-File Log Threshold API
+
+```c
+log_err_t elog_set_file_threshold(const char *filename, log_level_t threshold);
+log_level_t elog_get_file_threshold(const char *filename);
+```
+Use these functions to control logging verbosity for each module/source file.
 
 ### Custom Subscribers
 ```c
@@ -108,7 +129,7 @@ LOG_SUBSCRIBE(my_file_logger, LOG_LEVEL_ERROR);
 LOG_INIT();
 
 // Console for all messages
-LOG_SUBSCRIBE(logConsoleSubscriber, LOG_LEVEL_DEBUG);
+LOG_SUBSCRIBE(elog_console_subscriber, LOG_LEVEL_DEBUG);
 
 // File for errors only
 LOG_SUBSCRIBE(my_file_logger, LOG_LEVEL_ERROR);
@@ -264,17 +285,17 @@ int main(void) {
 ### Thread-Safe API Functions
 ```c
 /* Thread-safe versions (automatically used when ELOG_THREAD_SAFE=1) */
-void logMessageSafe(log_level_t level, const char *fmt, ...);
-void logMessageWithLocationSafe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
-log_err_t logSubscribeSafe(log_subscriber_t fn, log_level_t threshold);
-log_err_t logUnsubscribeSafe(log_subscriber_t fn);
+void elog_message_safe(log_level_t level, const char *fmt, ...);
+void elog_message_with_location_safe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
+log_err_t elog_subscribe_safe(log_subscriber_t fn, log_level_t threshold);
+log_err_t elog_unsubscribe_safe(log_subscriber_t fn);
 
 /* Task information functions */
-const char *elogGetTaskName(void);    /* Get current task name */
-uint32_t elogGetTaskId(void);         /* Get current task ID */
+const char *elog_get_task_name(void);    /* Get current task name */
+uint32_t elog_get_task_id(void);         /* Get current task ID */
 
 /* Thread-aware console subscriber */
-void logConsoleSubscriberWithThread(log_level_t level, const char *msg);
+void elog_console_subscriber_with_thread(log_level_t level, const char *msg);
 ```
 
 ### Performance Considerations
@@ -284,7 +305,8 @@ void logConsoleSubscriberWithThread(log_level_t level, const char *msg);
 - **RTOS Integration**: Minimal impact on existing RTOS task scheduling
 
 ## 🔧 New Features
-- **`elogUpdateRTOSReady` Function**: Allows dynamic updates to the RTOS readiness flag, enabling or disabling thread-safe operations based on runtime conditions.
+- **Per-File Log Thresholds**: Control log verbosity for each source file/module at runtime using `elog_set_file_threshold()` and `elog_get_file_threshold()`.
+- **`elog_update_RTOS_ready` Function**: Allows dynamic updates to the RTOS readiness flag, enabling or disabling thread-safe operations based on runtime conditions.
 - **Fallback Mutex Implementation**: For non-RTOS environments, a `pthread_mutex`-based implementation ensures thread safety without requiring an RTOS.
 
 ## �🔧 Configuration Options

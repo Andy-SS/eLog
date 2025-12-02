@@ -48,6 +48,16 @@ static elog_mutex_t s_log_mutex;
 static int s_mutex_initialized = 0;
 #endif
 
+#define MAX_FILE_LOG_LEVELS 16
+
+typedef struct {
+    char filename[32];
+    log_level_t threshold;
+} FileLogLevelEntry;
+
+static FileLogLevelEntry fileLogLevels[MAX_FILE_LOG_LEVELS];
+static int fileLogLevelCount = 0;
+
 /* ========================================================================== */
 /* Enhanced Logging Core Implementation */
 /* ========================================================================== */
@@ -55,7 +65,7 @@ static int s_mutex_initialized = 0;
 /**
  * @brief Initialize the enhanced logging system
  */
-void logInit(void) {
+void elog_init(void) {
   /* Clear all subscribers */
   for (int i = 0; i < LOG_MAX_SUBSCRIBERS; i++) {
     s_subscribers[i].fn = NULL;
@@ -81,7 +91,7 @@ void logInit(void) {
  * @param threshold: Minimum level to send to this subscriber
  * @return Error code
  */
-log_err_t logSubscribe(log_subscriber_t fn, log_level_t threshold) {
+log_err_t elog_subscribe(log_subscriber_t fn, log_level_t threshold) {
   if (s_num_subscribers >= LOG_MAX_SUBSCRIBERS) {
     return LOG_ERR_SUBSCRIBERS_EXCEEDED;
   }
@@ -109,7 +119,7 @@ log_err_t logSubscribe(log_subscriber_t fn, log_level_t threshold) {
  * @param fn: Function to unsubscribe
  * @return Error code
  */
-log_err_t logUnsubscribe(log_subscriber_t fn) {
+log_err_t elog_unsubscribe(log_subscriber_t fn) {
   for (int i = 0; i < s_num_subscribers; i++) {
     if (s_subscribers[i].fn == fn && s_subscribers[i].active) {
       s_subscribers[i].active = 0;
@@ -124,7 +134,7 @@ log_err_t logUnsubscribe(log_subscriber_t fn) {
  * @param level: Log level
  * @return String representation of level
  */
-const char *logLevelName(log_level_t level) {
+const char *elog_level_name(log_level_t level) {
   switch (level) {
     case LOG_LEVEL_TRACE:    return "TRACE";
     case LOG_LEVEL_DEBUG:    return "DEBUG";
@@ -141,7 +151,7 @@ const char *logLevelName(log_level_t level) {
  * @brief Get the automatically calculated threshold level
  * @return The LOG_AUTO_THRESHOLD value
  */
-log_level_t logGetAutoThreshold(void) {
+log_level_t elog_get_auto_threshold(void) {
   return LOG_AUTO_THRESHOLD;
 }
 
@@ -151,7 +161,7 @@ log_level_t logGetAutoThreshold(void) {
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void logMessage(log_level_t level, const char *fmt, ...) {
+void elog_message(log_level_t level, const char *fmt, ...) {
   va_list args;
   
   /* Format the message */
@@ -176,27 +186,31 @@ void logMessage(log_level_t level, const char *fmt, ...) {
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void logMessageWithLocation(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
-  va_list args;
-  char temp_buffer[LOG_MAX_MESSAGE_LENGTH - 64];  /* Reserve space for location info */
+void elog_message_with_location(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
+    const char *filename = debug_get_filename(file);
+    log_level_t threshold = elog_get_file_threshold(filename);
+    if (level < threshold) return; // Skip log if below file threshold
+
+    va_list args;
+    char temp_buffer[LOG_MAX_MESSAGE_LENGTH - 64];  /* Reserve space for location info */
   
-  /* Format the user message first */
-  va_start(args, fmt);
-  vsnprintf(temp_buffer, sizeof(temp_buffer), fmt, args);
-  va_end(args);
+    /* Format the user message first */
+    va_start(args, fmt);
+    vsnprintf(temp_buffer, sizeof(temp_buffer), fmt, args);
+    va_end(args);
   
-  /* Add location information - ensure null termination */
-  int written = snprintf(s_message_buffer, sizeof(s_message_buffer), "[%s][%s][%d] %s", file, func, line, temp_buffer);
-  if (written >= (int)sizeof(s_message_buffer)) {
-    s_message_buffer[sizeof(s_message_buffer) - 1] = '\0';  /* Ensure null termination */
-  }
-  
-  /* Send to all active subscribers */
-  for (int i = 0; i < s_num_subscribers; i++) {
-    if (s_subscribers[i].active && level >= s_subscribers[i].threshold) {
-      s_subscribers[i].fn(level, s_message_buffer);
+    /* Add location information - ensure null termination */
+    int written = snprintf(s_message_buffer, sizeof(s_message_buffer), "[%s][%s][%d] %s", file, func, line, temp_buffer);
+    if (written >= (int)sizeof(s_message_buffer)) {
+      s_message_buffer[sizeof(s_message_buffer) - 1] = '\0';  /* Ensure null termination */
     }
-  }
+  
+    /* Send to all active subscribers */
+    for (int i = 0; i < s_num_subscribers; i++) {
+      if (s_subscribers[i].active && level >= s_subscribers[i].threshold) {
+        s_subscribers[i].fn(level, s_message_buffer);
+      }
+    }
 }
 
 /* ========================================================================== */
@@ -208,7 +222,7 @@ void logMessageWithLocation(log_level_t level, const char *file, const char *fun
  * @param level: Severity level of the message
  * @param msg: Formatted message string
  */
-void logConsoleSubscriber(log_level_t level, const char *msg) {
+void elog_console_subscriber(log_level_t level, const char *msg) {
 #if USE_COLOR
   /* Color codes for different log levels */
   const char* colors[] = {
@@ -222,13 +236,13 @@ void logConsoleSubscriber(log_level_t level, const char *msg) {
   };
 
   if (level >= LOG_LEVEL_TRACE && level <= LOG_LEVEL_ALWAYS) {
-    printf("%s%s: %s%s\n", colors[level], logLevelName(level), msg, LOG_RESET_COLOR);
+    printf("%s%s: %s%s\n", colors[level], elog_level_name(level), msg, LOG_RESET_COLOR);
   } else {
-    printf("%s: %s\n", logLevelName(level), msg);
+    printf("%s: %s\n", elog_level_name(level), msg);
   }
 #else
   /* No color version */
-  printf("%s: %s\n", logLevelName(level), msg);
+  printf("%s: %s\n", elog_level_name(level), msg);
 #endif
 }
 
@@ -421,7 +435,7 @@ elog_thread_result_t elogMutexDelete(elog_mutex_t *mutex) {
  * @brief Update the RTOS_READY flag
  * @param ready: Boolean value indicating if RTOS is ready (1) or not (0)
  */
-void elogUpdateRTOSReady(bool ready) {
+void elog_update_RTOS_ready(bool ready) {
 #if (ELOG_THREAD_SAFE == 1)
   RTOS_READY = ready;
 #else
@@ -435,7 +449,7 @@ void elogUpdateRTOSReady(bool ready) {
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void logMessageSafe(log_level_t level, const char *fmt, ...) {
+void elog_message_safe(log_level_t level, const char *fmt, ...) {
   if (!s_mutex_initialized) {
     /* Fall back to non-thread-safe version */
     va_list args;
@@ -487,7 +501,7 @@ void logMessageSafe(log_level_t level, const char *fmt, ...) {
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void logMessageWithLocationSafe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
+void elog_message_with_location_safe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
   if (!s_mutex_initialized) {
     /* Fall back to non-thread-safe version */
     va_list args;
@@ -546,10 +560,10 @@ void logMessageWithLocationSafe(log_level_t level, const char *file, const char 
  * @param threshold: Minimum level to send to this subscriber
  * @return Error code
  */
-log_err_t logSubscribeSafe(log_subscriber_t fn, log_level_t threshold) {
+log_err_t elog_subscribe_safe(log_subscriber_t fn, log_level_t threshold) {
   if (!s_mutex_initialized) {
     /* Fall back to non-thread-safe version */
-    return logSubscribe(fn, threshold);
+    return elog_subscribe(fn, threshold);
   }
 
   /* Take mutex with timeout */
@@ -589,10 +603,10 @@ exit:
  * @param fn: Function to unsubscribe
  * @return Error code
  */
-log_err_t logUnsubscribeSafe(log_subscriber_t fn) {
+log_err_t elog_unsubscribe_safe(log_subscriber_t fn) {
   if (!s_mutex_initialized) {
     /* Fall back to non-thread-safe version */
-    return logUnsubscribe(fn);
+    return elog_unsubscribe(fn);
   }
 
   /* Take mutex with timeout */
@@ -619,7 +633,7 @@ log_err_t logUnsubscribeSafe(log_subscriber_t fn) {
  * @brief Get current task name (RTOS-specific)
  * @return Task name string or "UNKNOWN" if not available
  */
-const char *elogGetTaskName(void) {
+const char *elog_get_task_name(void) {
 #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
   #ifdef INC_FREERTOS_H
     TaskHandle_t current_task = xTaskGetCurrentTaskHandle();
@@ -649,7 +663,7 @@ const char *elogGetTaskName(void) {
  * @brief Get current task ID (RTOS-specific)
  * @return Task ID or 0 if not available
  */
-uint32_t elogGetTaskId(void) {
+uint32_t elog_get_task_id(void) {
 #if (ELOG_RTOS_TYPE == ELOG_RTOS_FREERTOS)
   #ifdef INC_FREERTOS_H
     TaskHandle_t current_task = xTaskGetCurrentTaskHandle();
@@ -676,7 +690,7 @@ uint32_t elogGetTaskId(void) {
  * @param level: Severity level of the message
  * @param msg: Formatted message string
  */
-void logConsoleSubscriberWithThread(log_level_t level, const char *msg) {
+void elog_console_subscriber_with_thread(log_level_t level, const char *msg) {
 #if USE_COLOR
   /* Color codes for different log levels */
   const char* colors[] = {
@@ -690,13 +704,13 @@ void logConsoleSubscriberWithThread(log_level_t level, const char *msg) {
   };
   
   if (level >= LOG_LEVEL_TRACE && level <= LOG_LEVEL_ALWAYS) {
-    printf("%s%s[%s]: %s%s\n", colors[level], logLevelName(level), elogGetTaskName(), msg, LOG_RESET_COLOR);
+    printf("%s%s[%s]: %s%s\n", colors[level], elog_level_name(level), elog_get_task_name(), msg, LOG_RESET_COLOR);
   } else {
-    printf("%s[%s]: %s\n", logLevelName(level), elogGetTaskName(), msg);
+    printf("%s[%s]: %s\n", elog_level_name(level), elog_get_task_name(), msg);
   }
 #else
   /* No color version */
-  printf("%s[%s]: %s\n", logLevelName(level), elogGetTaskName(), msg);
+  printf("%s[%s]: %s\n", elog_level_name(level), elog_get_task_name(), msg);
 #endif
 }
 
@@ -709,7 +723,7 @@ void logConsoleSubscriberWithThread(log_level_t level, const char *msg) {
 #if (ELOG_THREAD_SAFE == 0)
 /* Fallback implementations when threading is disabled - just call regular versions */
 
-void logMessageSafe(log_level_t level, const char *fmt, ...) {
+void elog_message_safe(log_level_t level, const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
   vsnprintf(s_message_buffer, sizeof(s_message_buffer), fmt, args);
@@ -722,7 +736,7 @@ void logMessageSafe(log_level_t level, const char *fmt, ...) {
   }
 }
 
-void logMessageWithLocationSafe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
+void elog_message_with_location_safe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...) {
   va_list args;
   char temp_buffer[LOG_MAX_MESSAGE_LENGTH - 64];  /* Reserve space for location info */
   
@@ -742,12 +756,12 @@ void logMessageWithLocationSafe(log_level_t level, const char *file, const char 
   }
 }
 
-log_err_t logSubscribeSafe(log_subscriber_t fn, log_level_t threshold) {
-  return logSubscribe(fn, threshold);
+log_err_t elog_subscribe_safe(log_subscriber_t fn, log_level_t threshold) {
+  return elog_subscribe(fn, threshold);
 }
 
-log_err_t logUnsubscribeSafe(log_subscriber_t fn) {
-  return logUnsubscribe(fn);
+log_err_t elog_unsubscribe_safe(log_subscriber_t fn) {
+  return elog_unsubscribe(fn);
 }
 
 #endif /* ELOG_THREAD_SAFE == 0 */
@@ -782,3 +796,31 @@ elog_thread_result_t elogMutexDelete(elog_mutex_t *mutex) {
   return ELOG_THREAD_OK;
 }
 #endif
+
+log_err_t elog_set_file_threshold(const char *filename, log_level_t threshold) {
+    if (!filename) return LOG_ERR_INVALID_LEVEL;
+    for (int i = 0; i < fileLogLevelCount; ++i) {
+        if (strcmp(fileLogLevels[i].filename, filename) == 0) {
+            fileLogLevels[i].threshold = threshold;
+            return LOG_ERR_NONE;
+        }
+    }
+    if (fileLogLevelCount < MAX_FILE_LOG_LEVELS) {
+        strncpy(fileLogLevels[fileLogLevelCount].filename, filename, sizeof(fileLogLevels[fileLogLevelCount].filename) - 1);
+        fileLogLevels[fileLogLevelCount].filename[sizeof(fileLogLevels[fileLogLevelCount].filename) - 1] = '\0';
+        fileLogLevels[fileLogLevelCount].threshold = threshold;
+        fileLogLevelCount++;
+        return LOG_ERR_NONE;
+    }
+    return LOG_ERR_SUBSCRIBERS_EXCEEDED;
+}
+
+log_level_t elog_get_file_threshold(const char *filename) {
+    if (!filename) return LOG_AUTO_THRESHOLD;
+    for (int i = 0; i < fileLogLevelCount; ++i) {
+        if (strcmp(fileLogLevels[i].filename, filename) == 0) {
+            return fileLogLevels[i].threshold;
+        }
+    }
+    return LOG_AUTO_THRESHOLD;
+}

@@ -18,14 +18,25 @@
 /* ========================================================================== */
 
 /**
+ * @brief  Demonstrate per-file log threshold usage
+ * @retval None
+ */
+void perFileThresholdExample(void) {
+    // Set log threshold for this file (module)
+    elog_set_file_threshold("eLog_example.c", LOG_LEVEL_DEBUG);
+
+    LOG_INFO("This info message will be shown if threshold allows");
+    LOG_DEBUG("This debug message will be shown due to per-file threshold");
+    LOG_TRACE("This trace message will NOT be shown (threshold too high)");
+}
+
+/**
  * @brief  Demonstrate basic enhanced logging usage
  * @retval None
  */
 void enhancedLoggingBasicExample(void) {
-  // Initialize the enhanced logging system with console subscriber
   LOG_INIT_WITH_CONSOLE_AUTO();
 
-  // Basic logging with different levels
   LOG_INFO("Enhanced logging system initialized successfully");
   LOG_DEBUG("Debug information: value=%d, pointer=%p", 42, (void *)0x12345678);
   LOG_WARNING("This is a warning message");
@@ -33,7 +44,6 @@ void enhancedLoggingBasicExample(void) {
   LOG_CRITICAL("Critical system failure detected!");
   LOG_ALWAYS("This message is always logged");
 
-  // String-only versions (more efficient for simple messages)
   LOG_INFO_STR("Simple info message");
   LOG_ERROR_STR("Simple error message");
 }
@@ -43,13 +53,11 @@ void enhancedLoggingBasicExample(void) {
  * @retval None
  */
 void legacyLoggingExample(void) {
-  // Legacy print macros (now use enhanced logging internally)
   printIF("Information message using legacy printIF");
   printLOG("Debug message using legacy printLOG: value=%d", 123);
   printWRN("Warning message using legacy printWRN");
   printERR("Error message using legacy printERR: status=0x%04X", 0x1234);
 
-  // String-only versions
   printIF_STR("Simple info using legacy printIF_STR");
   printERR_STR("Simple error using legacy printERR_STR");
 }
@@ -60,7 +68,6 @@ void legacyLoggingExample(void) {
  * @param  msg: Formatted message
  */
 void customFileSubscriber(log_level_t level, const char *msg) {
-  // This is just an example - in real implementation you would write to file
   printf("[FILE] %s: %s\n", log_level_name(level), msg);
 }
 
@@ -70,7 +77,6 @@ void customFileSubscriber(log_level_t level, const char *msg) {
  * @param  msg: Formatted message
  */
 void customMemorySubscriber(log_level_t level, const char *msg) {
-  // This is just an example - in real implementation you would store in memory buffer
   static int message_count = 0;
   message_count++;
   printf("[MEM #%d] %s: %s\n", message_count, log_level_name(level), msg);
@@ -81,17 +87,14 @@ void customMemorySubscriber(log_level_t level, const char *msg) {
  * @retval None
  */
 void multipleSubscribersExample(void) {
-  // Initialize logging system
   LOG_INIT();
 
-  // Subscribe multiple handlers with different thresholds
-  LOG_SUBSCRIBE(logConsoleSubscriber, LOG_LEVEL_DEBUG);   // Console gets debug and above
-  LOG_SUBSCRIBE(customFileSubscriber, LOG_LEVEL_INFO);    // File gets info and above
-  LOG_SUBSCRIBE(customMemorySubscriber, LOG_LEVEL_ERROR); // Memory gets only errors
+  LOG_SUBSCRIBE(elog_console_subscriber, LOG_LEVEL_DEBUG);
+  LOG_SUBSCRIBE(customFileSubscriber, LOG_LEVEL_INFO);
+  LOG_SUBSCRIBE(customMemorySubscriber, LOG_LEVEL_ERROR);
 
   LOG_INFO("=== Multiple Subscribers Demo ===");
 
-  // Test different log levels - observe which subscribers receive which messages
   LOG_TRACE("This trace message won't appear anywhere (threshold too low)");
   LOG_DEBUG("This debug message only goes to console");
   LOG_INFO("This info message goes to console and file");
@@ -111,11 +114,9 @@ void autoThresholdExample(void) {
 
   LOG_INFO("=== Auto Threshold Demo ===");
 
-  // Show current auto-calculated threshold
-  log_level_t threshold = log_get_auto_threshold();
+  log_level_t threshold = elog_get_auto_threshold();
   LOG_INFO("Current auto-threshold: %s (%d)", log_level_name(threshold), threshold);
 
-  // Explain what this means
   LOG_INFO("Based on debug flags, console subscriber will receive:");
 
 #if (DEBUG_TRACE == YES)
@@ -172,7 +173,6 @@ void performanceDemo(void) {
 
   LOG_INFO("=== Performance Demo ===");
 
-  // When debug flags are disabled, these macros compile to nothing
   LOG_INFO("Active logging levels are optimized at compile time");
 
 #if (DEBUG_TRACE == YES)
@@ -202,15 +202,12 @@ void unifiedDebugControlDemo(void) {
   LOG_INFO("=== Unified Debug Control Demo ===");
   LOG_INFO("Single debug flags control both legacy and enhanced logging:");
 
-  // Both of these are controlled by the same DEBUG_INFO flag
   LOG_INFO("Enhanced API: This uses LOG_INFO (DEBUG_INFO flag)");
   printIF("Legacy API: This uses printIF (same DEBUG_INFO flag)");
 
-  // Both controlled by DEBUG_ERR flag
   LOG_ERROR("Enhanced API: This uses LOG_ERROR (DEBUG_ERR flag)");
   printERR("Legacy API: This uses printERR (same DEBUG_ERR flag)");
 
-  // Both controlled by DEBUG_LOG flag
   LOG_DEBUG("Enhanced API: This uses LOG_DEBUG (DEBUG_LOG flag)");
   printLOG("Legacy API: This uses printLOG (same DEBUG_LOG flag)");
 
@@ -225,15 +222,12 @@ void unifiedDebugControlDemo(void) {
 void subscriberManagementDemo(void) {
   LOG_INIT();
 
-  // Subscribe console
   LOG_SUBSCRIBE_CONSOLE();
   LOG_INFO("Console subscriber added");
 
-  // Add custom subscriber
   LOG_SUBSCRIBE(customMemorySubscriber, LOG_LEVEL_WARNING);
   LOG_WARNING("Memory subscriber added - you should see this in both console and memory");
 
-  // Remove memory subscriber
   LOG_UNSUBSCRIBE(customMemorySubscriber);
   LOG_WARNING("Memory subscriber removed - you should only see this in console");
 
@@ -249,7 +243,6 @@ void completeLoggingDemo(void) {
   printf("    Enhanced Logging System Demo\n");
   printf("==========================================" LOG_RESET_COLOR "\n\n");
 
-  // Run all examples
   enhancedLoggingBasicExample();
   printf("\n");
 
@@ -271,6 +264,9 @@ void completeLoggingDemo(void) {
   multipleSubscribersExample();
   printf("\n");
 
+  perFileThresholdExample();
+  printf("\n");
+
   printf(LOG_COLOR(LOG_COLOR_GREEN) "==========================================\n");
   printf("    Enhanced Logging Demo Complete!\n");
   printf("==========================================" LOG_RESET_COLOR "\n\n");
@@ -281,18 +277,10 @@ void completeLoggingDemo(void) {
  * @retval None
  */
 void simpleAppInitializationExample(void) {
-  // This is all you need in your main() or initialization function:
   LOG_INIT_WITH_CONSOLE_AUTO();
 
-  // Now you can use both enhanced and legacy logging anywhere:
   LOG_INFO("Application started successfully");
   printIF("Legacy logging also works");
-
-  // The system automatically:
-  // - Uses colors in console output
-  // - Respects debug flag settings
-  // - Optimizes disabled levels at compile time
-  // - Provides unified behavior between APIs
 }
 
 /**
@@ -300,24 +288,12 @@ void simpleAppInitializationExample(void) {
  * @retval None
  */
 void rtosReadinessExample(void) {
-    // Update RTOS readiness flag
     elogUpdateRtosReady(true);
-
-    // Log a message indicating RTOS is ready
     LOG_INFO("RTOS is now ready for logging");
 }
 
 /* Updated example usage for eLog */
 int main() {
-    // Initialize logging system
-    logInit();
-
-    // Subscribe to console output
-    logSubscribe(logConsoleSubscriber, LOG_LEVEL_INFO);
-
-    // Log messages
-    logMessage(LOG_LEVEL_INFO, "System initialized");
-    logMessage(LOG_LEVEL_ERROR, "Error code: 0x%02X", COMM_ERR_I2C);
-
+    completeLoggingDemo();
     return 0;
 }

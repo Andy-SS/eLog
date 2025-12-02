@@ -28,8 +28,12 @@
 
 /* Usage in ThreadX threads: */
 void thread_entry(ULONG thread_input) {
+    // Set per-file log threshold for this thread's source file
+    elog_set_file_threshold("your_thread_file.c", LOG_LEVEL_DEBUG);
+
     while(1) {
-        LOG_INFO("Thread [%s] processing", elogGetTaskName());
+        LOG_INFO("Thread [%s] processing", elog_get_task_name());
+        LOG_DEBUG("Debug info for ThreadX thread");
         tx_thread_sleep(100);
     }
 }
@@ -55,8 +59,12 @@ void thread_entry(ULONG thread_input) {
 /* Usage in FreeRTOS tasks: */
 /*
 void vTask1(void *pvParameters) {
+    // Set per-file log threshold for this task's source file
+    elog_set_file_threshold("your_task_file.c", LOG_LEVEL_INFO);
+
     for(;;) {
         LOG_INFO("Task 1 running on core %d", xPortGetCoreID());
+        LOG_DEBUG("Debug info for FreeRTOS task");
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -81,8 +89,11 @@ void vTask1(void *pvParameters) {
 /* Usage in ThreadX threads: */
 /*
 void thread_entry(ULONG thread_input) {
+    elog_set_file_threshold("your_thread_file.c", LOG_LEVEL_WARNING);
+
     while(1) {
-        LOG_INFO("Thread [%s] processing", elogGetTaskName());
+        LOG_INFO("Thread [%s] processing", elog_get_task_name());
+        LOG_WARNING("Warning info for ThreadX thread");
         tx_thread_sleep(100);
     }
 }
@@ -107,8 +118,11 @@ void thread_entry(ULONG thread_input) {
 /* Usage in CMSIS-RTOS threads: */
 /*
 void thread_function(void *argument) {
+    elog_set_file_threshold("your_cmsis_thread_file.c", LOG_LEVEL_ERROR);
+
     while(1) {
         LOG_INFO("CMSIS thread executing");
+        LOG_ERROR("Error info for CMSIS thread");
         osDelay(1000);
     }
 }
@@ -132,6 +146,8 @@ void thread_function(void *argument) {
 /*
 int main(void) {
     LOG_INIT_WITH_CONSOLE_AUTO();
+    elog_set_file_threshold("main.c", LOG_LEVEL_INFO);
+
     LOG_INFO("Bare metal application started");
     
     while(1) {
@@ -178,6 +194,7 @@ int main(void) {
  * 4. Your existing debug macros work immediately
  * 5. Gradually adopt new LOG_xxx macros for enhanced features
  * 6. Add custom subscribers for file/network/memory logging as needed
+ * 7. Use elog_set_file_threshold() for per-file/module log control
  */
 
 #endif /* ELOG_CONFIG_EXAMPLES_H */
