@@ -36,47 +36,47 @@ void rtos_logging_init(void) {
 #else
     LOG_INIT_WITH_CONSOLE_AUTO();
 #endif
-    LOG_INFO("eLog RTOS integration initialized");
-    LOG_INFO("Thread safety: %s", (ELOG_THREAD_SAFE ? "ENABLED" : "DISABLED"));
-    LOG_INFO("RTOS type: %d", ELOG_RTOS_TYPE);
+    ELOG_INFO(ELOG_MD_MAIN, "eLog RTOS integration initialized");
+    ELOG_INFO(ELOG_MD_MAIN, "Thread safety: %s", (ELOG_THREAD_SAFE ? "ENABLED" : "DISABLED"));
+    ELOG_INFO(ELOG_MD_MAIN, "RTOS type: %d", ELOG_RTOS_TYPE);
 }
 
 /**
  * @brief Example task that uses thread-safe logging
  */
 void sensor_task_example(void) {
-    elog_set_file_threshold("eLog_rtos_demo.c", LOG_LEVEL_DEBUG);
+    elog_set_module_threshold(ELOG_MD_SENSOR, ELOG_LEVEL_DEBUG);
 
-    LOG_DEBUG("Sensor task starting");
+    ELOG_DEBUG(ELOG_MD_SENSOR, "Sensor task starting");
     int sensor_value = 42;
-    LOG_INFO("Sensor reading: %d", sensor_value);
+    ELOG_INFO(ELOG_MD_SENSOR, "Sensor reading: %d", sensor_value);
 
     if (sensor_value > 50) {
-        LOG_WARNING("Sensor value high: 0x%02X", SENSOR_ERR_RANGE);
+        ELOG_WARNING(ELOG_MD_SENSOR, "Sensor value high: 0x%02X", ELOG_SENSOR_ERR_RANGE);
     }
     if (sensor_value < 0) {
-        LOG_CRITICAL("Sensor failure detected: 0x%02X", SENSOR_ERR_NOT_FOUND);
+        ELOG_CRITICAL(ELOG_MD_SENSOR, "Sensor failure detected: 0x%02X", ELOG_SENSOR_ERR_NOT_FOUND);
     }
-    LOG_DEBUG("Sensor task completed");
+    ELOG_DEBUG(ELOG_MD_SENSOR, "Sensor task completed");
 }
 
 /**
  * @brief Example communication task with thread-safe logging
  */
 void comm_task_example(void) {
-    elog_set_file_threshold("eLog_rtos_demo.c", LOG_LEVEL_INFO);
+    elog_set_module_threshold(ELOG_MD_COMM, ELOG_LEVEL_DEBUG);
 
-    LOG_DEBUG("Communication task starting");
-    LOG_INFO("Initializing UART communication");
-    LOG_DEBUG("Starting I2C transaction");
+    ELOG_DEBUG(ELOG_MD_COMM, "Communication task starting");
+    ELOG_INFO(ELOG_MD_COMM, "Initializing UART communication");
+    ELOG_DEBUG(ELOG_MD_COMM, "Starting I2C transaction");
 
     int comm_status = -1;
     if (comm_status != 0) {
-        LOG_ERROR("I2C communication failed: 0x%02X", COMM_ERR_I2C);
+        ELOG_ERROR(ELOG_MD_COMM, "I2C communication failed: 0x%02X", ELOG_COMM_ERR_I2C);
     } else {
-        LOG_INFO("I2C communication successful");
+        ELOG_INFO(ELOG_MD_COMM, "I2C communication successful");
     }
-    LOG_DEBUG("Communication task completed");
+    ELOG_DEBUG(ELOG_MD_COMM, "Communication task completed");
 }
 
 /**
@@ -85,7 +85,7 @@ void comm_task_example(void) {
 void custom_subscriber_example(log_level_t level, const char *msg) {
     printf("[%lu] CUSTOM[%s]: %s\n", 
            (unsigned long)0, /* Would be real timestamp */
-           log_level_name(level), 
+           elog_level_name(level), 
            msg);
 }
 
@@ -93,26 +93,26 @@ void custom_subscriber_example(log_level_t level, const char *msg) {
  * @brief Demonstrate multi-subscriber setup for RTOS
  */
 void rtos_multi_subscriber_demo(void) {
-    LOG_INFO("Setting up multiple subscribers for RTOS environment");
+    ELOG_INFO(ELOG_MD_MAIN, "Setting up multiple subscribers for RTOS environment");
 
     /* Add custom subscriber for ERROR and above */
-    LOG_SUBSCRIBE(custom_subscriber_example, LOG_LEVEL_ERROR);
+    LOG_SUBSCRIBE(custom_subscriber_example, ELOG_LEVEL_ERROR);
 
     /* Test messages at different levels */
-    LOG_DEBUG("This goes only to console");
-    LOG_INFO("This also goes only to console");  
-    LOG_WARNING("This also goes only to console");
-    LOG_ERROR("This goes to BOTH console and custom subscriber");
-    LOG_CRITICAL("This also goes to BOTH subscribers");
+    ELOG_DEBUG(ELOG_MD_MAIN, "This goes only to console");
+    ELOG_INFO(ELOG_MD_MAIN, "This also goes only to console");  
+    ELOG_WARNING(ELOG_MD_MAIN, "This also goes only to console");
+    ELOG_ERROR(ELOG_MD_MAIN, "This goes to BOTH console and custom subscriber");
+    ELOG_CRITICAL(ELOG_MD_MAIN, "This also goes to BOTH subscribers");
 
-    /* Per-file threshold demonstration */
-    elog_set_file_threshold("eLog_rtos_demo.c", LOG_LEVEL_WARNING);
-    LOG_INFO("This info message will NOT be shown (threshold too high)");
-    LOG_WARNING("This warning message WILL be shown");
-    LOG_ERROR("This error message WILL be shown");
-    LOG_CRITICAL("This critical message WILL be shown");
+    /* Per-module threshold demonstration */
+    elog_set_module_threshold(ELOG_MD_MAIN, ELOG_LEVEL_WARNING);
+    ELOG_INFO(ELOG_MD_MAIN, "This info message will NOT be shown (threshold too high)");
+    ELOG_WARNING(ELOG_MD_MAIN, "This warning message WILL be shown");
+    ELOG_ERROR(ELOG_MD_MAIN, "This error message WILL be shown");
+    ELOG_CRITICAL(ELOG_MD_MAIN, "This critical message WILL be shown");
 
-    LOG_INFO("Multi-subscriber demo completed");
+    ELOG_INFO(ELOG_MD_MAIN, "Multi-subscriber demo completed");
 }
 
 /**

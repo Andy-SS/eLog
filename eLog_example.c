@@ -1,7 +1,7 @@
 /***********************************************************
- * @file	log_example.c
+ * @file	eLog_example.c
  * @author	Andy Chen (clgm216@gmail.com)
- * @version	0.01
+ * @version	0.04
  * @date	2024-09-10
  * @brief  Enhanced logging system usage examples
  *         Demonstrates both legacy and enhanced logging APIs
@@ -18,16 +18,16 @@
 /* ========================================================================== */
 
 /**
- * @brief  Demonstrate per-file log threshold usage
+ * @brief  Demonstrate per-module log threshold usage
  * @retval None
  */
-void perFileThresholdExample(void) {
-    // Set log threshold for this file (module)
-    elog_set_file_threshold("eLog_example.c", LOG_LEVEL_DEBUG);
+void perModuleThresholdExample(void) {
+    // Set log threshold for this module
+    elog_set_module_threshold(ELOG_MD_MAIN, ELOG_LEVEL_DEBUG);
 
-    LOG_INFO("This info message will be shown if threshold allows");
-    LOG_DEBUG("This debug message will be shown due to per-file threshold");
-    LOG_TRACE("This trace message will NOT be shown (threshold too high)");
+    ELOG_INFO(ELOG_MD_MAIN, "This info message will be shown if threshold allows");
+    ELOG_DEBUG(ELOG_MD_MAIN, "This debug message will be shown due to per-module threshold");
+    ELOG_TRACE(ELOG_MD_MAIN, "This trace message will NOT be shown (threshold too high)");
 }
 
 /**
@@ -37,15 +37,15 @@ void perFileThresholdExample(void) {
 void enhancedLoggingBasicExample(void) {
   LOG_INIT_WITH_CONSOLE_AUTO();
 
-  LOG_INFO("Enhanced logging system initialized successfully");
-  LOG_DEBUG("Debug information: value=%d, pointer=%p", 42, (void *)0x12345678);
-  LOG_WARNING("This is a warning message");
-  LOG_ERROR("Error occurred: code=0x%02X", 0xAB);
-  LOG_CRITICAL("Critical system failure detected!");
-  LOG_ALWAYS("This message is always logged");
+  ELOG_INFO(ELOG_MD_MAIN, "Enhanced logging system initialized successfully");
+  ELOG_DEBUG(ELOG_MD_MAIN, "Debug information: value=%d, pointer=%p", 42, (void *)0x12345678);
+  ELOG_WARNING(ELOG_MD_MAIN, "This is a warning message");
+  ELOG_ERROR(ELOG_MD_MAIN, "Error occurred: code=0x%02X", 0xAB);
+  ELOG_CRITICAL(ELOG_MD_MAIN, "Critical system failure detected!");
+  ELOG_ALWAYS(ELOG_MD_MAIN, "This message is always logged");
 
-  LOG_INFO_STR("Simple info message");
-  LOG_ERROR_STR("Simple error message");
+  ELOG_INFO_STR(ELOG_MD_MAIN, "Simple info message");
+  ELOG_ERROR_STR(ELOG_MD_MAIN, "Simple error message");
 }
 
 /**
@@ -53,13 +53,13 @@ void enhancedLoggingBasicExample(void) {
  * @retval None
  */
 void legacyLoggingExample(void) {
-  printIF("Information message using legacy printIF");
-  printLOG("Debug message using legacy printLOG: value=%d", 123);
-  printWRN("Warning message using legacy printWRN");
-  printERR("Error message using legacy printERR: status=0x%04X", 0x1234);
+  printIF(ELOG_MD_MAIN, "Information message using legacy printIF");
+  printLOG(ELOG_MD_MAIN, "Debug message using legacy printLOG: value=%d", 123);
+  printWRN(ELOG_MD_MAIN, "Warning message using legacy printWRN");
+  printERR(ELOG_MD_MAIN, "Error message using legacy printERR: status=0x%04X", 0x1234);
 
-  printIF_STR("Simple info using legacy printIF_STR");
-  printERR_STR("Simple error using legacy printERR_STR");
+  printIF_STR(ELOG_MD_MAIN, "Simple info using legacy printIF_STR");
+  printERR_STR(ELOG_MD_MAIN, "Simple error using legacy printERR_STR");
 }
 
 /**
@@ -68,7 +68,7 @@ void legacyLoggingExample(void) {
  * @param  msg: Formatted message
  */
 void customFileSubscriber(log_level_t level, const char *msg) {
-  printf("[FILE] %s: %s\n", log_level_name(level), msg);
+  printf("[FILE] %s: %s\n", elog_level_name(level), msg);
 }
 
 /**
@@ -79,7 +79,7 @@ void customFileSubscriber(log_level_t level, const char *msg) {
 void customMemorySubscriber(log_level_t level, const char *msg) {
   static int message_count = 0;
   message_count++;
-  printf("[MEM #%d] %s: %s\n", message_count, log_level_name(level), msg);
+  printf("[MEM #%d] %s: %s\n", message_count, elog_level_name(level), msg);
 }
 
 /**
@@ -89,20 +89,20 @@ void customMemorySubscriber(log_level_t level, const char *msg) {
 void multipleSubscribersExample(void) {
   LOG_INIT();
 
-  LOG_SUBSCRIBE(elog_console_subscriber, LOG_LEVEL_DEBUG);
-  LOG_SUBSCRIBE(customFileSubscriber, LOG_LEVEL_INFO);
-  LOG_SUBSCRIBE(customMemorySubscriber, LOG_LEVEL_ERROR);
+  LOG_SUBSCRIBE(elog_console_subscriber, ELOG_LEVEL_DEBUG);
+  LOG_SUBSCRIBE(customFileSubscriber, ELOG_LEVEL_DEBUG);
+  LOG_SUBSCRIBE(customMemorySubscriber, ELOG_LEVEL_ERROR);
 
-  LOG_INFO("=== Multiple Subscribers Demo ===");
+  ELOG_INFO(ELOG_MD_MAIN, "=== Multiple Subscribers Demo ===");
 
-  LOG_TRACE("This trace message won't appear anywhere (threshold too low)");
-  LOG_DEBUG("This debug message only goes to console");
-  LOG_INFO("This info message goes to console and file");
-  LOG_WARNING("This warning goes to console and file");
-  LOG_ERROR("This error goes to console, file, and memory");
-  LOG_CRITICAL("This critical message goes everywhere");
+  ELOG_TRACE(ELOG_MD_MAIN, "This trace message won't appear anywhere (threshold too low)");
+  ELOG_DEBUG(ELOG_MD_MAIN, "This debug message only goes to console");
+  ELOG_INFO(ELOG_MD_MAIN, "This info message goes to console and file");
+  ELOG_WARNING(ELOG_MD_MAIN, "This warning goes to console and file");
+  ELOG_ERROR(ELOG_MD_MAIN, "This error goes to console, file, and memory");
+  ELOG_CRITICAL(ELOG_MD_MAIN, "This critical message goes everywhere");
 
-  LOG_INFO_STR("=== End Multiple Subscribers Demo ===");
+  ELOG_INFO_STR(ELOG_MD_MAIN, "=== End Multiple Subscribers Demo ===");
 }
 
 /**
@@ -112,56 +112,56 @@ void multipleSubscribersExample(void) {
 void autoThresholdExample(void) {
   LOG_INIT_WITH_CONSOLE_AUTO();
 
-  LOG_INFO("=== Auto Threshold Demo ===");
+  ELOG_INFO(ELOG_MD_MAIN, "=== Auto Threshold Demo ===");
 
   log_level_t threshold = elog_get_auto_threshold();
-  LOG_INFO("Current auto-threshold: %s (%d)", log_level_name(threshold), threshold);
+  ELOG_INFO(ELOG_MD_MAIN, "Current auto-threshold: %s (%d)", elog_level_name(threshold), threshold);
 
-  LOG_INFO("Based on debug flags, console subscriber will receive:");
+  ELOG_INFO(ELOG_MD_MAIN, "Based on debug flags, console subscriber will receive:");
 
-#if (DEBUG_TRACE == YES)
-  LOG_INFO("- TRACE messages (DEBUG_TRACE=YES)");
+#if (ELOG_DEBUG_TRACE_ON == YES)
+  ELOG_INFO(ELOG_MD_MAIN, "- TRACE messages (ELOG_DEBUG_TRACE_ON=YES)");
 #else
-  LOG_INFO("- No TRACE messages (DEBUG_TRACE=NO)");
+  ELOG_INFO(ELOG_MD_MAIN, "- No TRACE messages (ELOG_DEBUG_TRACE_ON=NO)");
 #endif
 
-#if (DEBUG_LOG == YES)
-  LOG_INFO("- DEBUG messages (DEBUG_LOG=YES)");
+#if (ELOG_DEBUG_LOG_ON == YES)
+  ELOG_INFO(ELOG_MD_MAIN, "- DEBUG messages (ELOG_DEBUG_LOG_ON=YES)");
 #else
-  LOG_INFO("- No DEBUG messages (DEBUG_LOG=NO)");
+  ELOG_INFO(ELOG_MD_MAIN, "- No DEBUG messages (ELOG_DEBUG_LOG_ON=NO)");
 #endif
 
-#if (DEBUG_INFO == YES)
-  LOG_INFO("- INFO messages (DEBUG_INFO=YES)");
+#if (ELOG_DEBUG_INFO_ON == YES)
+  ELOG_INFO(ELOG_MD_MAIN, "- INFO messages (ELOG_DEBUG_INFO_ON=YES)");
 #else
-  LOG_INFO("- No INFO messages (DEBUG_INFO=NO)");
+  ELOG_INFO(ELOG_MD_MAIN, "- No INFO messages (ELOG_DEBUG_INFO_ON=NO)");
 #endif
 
-#if (DEBUG_WARN == YES)
-  LOG_INFO("- WARNING messages (DEBUG_WARN=YES)");
+#if (ELOG_DEBUG_WARN_ON == YES)
+  ELOG_INFO(ELOG_MD_MAIN, "- WARNING messages (ELOG_DEBUG_WARN_ON=YES)");
 #else
-  LOG_INFO("- No WARNING messages (DEBUG_WARN=NO)");
+  ELOG_INFO(ELOG_MD_MAIN, "- No WARNING messages (ELOG_DEBUG_WARN_ON=NO)");
 #endif
 
-#if (DEBUG_ERR == YES)
-  LOG_INFO("- ERROR messages (DEBUG_ERR=YES)");
+#if (ELOG_DEBUG_ERR_ON == YES)
+  ELOG_INFO(ELOG_MD_MAIN, "- ERROR messages (ELOG_DEBUG_ERR_ON=YES)");
 #else
-  LOG_INFO("- No ERROR messages (DEBUG_ERR=NO)");
+  ELOG_INFO(ELOG_MD_MAIN, "- No ERROR messages (ELOG_DEBUG_ERR_ON=NO)");
 #endif
 
-#if (DEBUG_CRITICAL == YES)
-  LOG_INFO("- CRITICAL messages (DEBUG_CRITICAL=YES)");
+#if (ELOG_DEBUG_CRITICAL_ON == YES)
+  ELOG_INFO(ELOG_MD_MAIN, "- CRITICAL messages (ELOG_DEBUG_CRITICAL_ON=YES)");
 #else
-  LOG_INFO("- No CRITICAL messages (DEBUG_CRITICAL=NO)");
+  ELOG_INFO(ELOG_MD_MAIN, "- No CRITICAL messages (ELOG_DEBUG_CRITICAL_ON=NO)");
 #endif
 
-#if (DEBUG_ALWAYS == YES)
-  LOG_INFO("- ALWAYS messages (DEBUG_ALWAYS=YES)");
+#if (ELOG_DEBUG_ALWAYS_ON == YES)
+  ELOG_INFO(ELOG_MD_MAIN, "- ALWAYS messages (ELOG_DEBUG_ALWAYS_ON=YES)");
 #else
-  LOG_INFO("- No ALWAYS messages (DEBUG_ALWAYS=NO)");
+  ELOG_INFO(ELOG_MD_MAIN, "- No ALWAYS messages (ELOG_DEBUG_ALWAYS_ON=NO)");
 #endif
 
-  LOG_INFO_STR("=== End Auto Threshold Demo ===");
+  ELOG_INFO_STR(ELOG_MD_MAIN, "=== End Auto Threshold Demo ===");
 }
 
 /**
@@ -171,25 +171,25 @@ void autoThresholdExample(void) {
 void performanceDemo(void) {
   LOG_INIT_WITH_CONSOLE_AUTO();
 
-  LOG_INFO("=== Performance Demo ===");
+  ELOG_INFO(ELOG_MD_MAIN, "=== Performance Demo ===");
 
-  LOG_INFO("Active logging levels are optimized at compile time");
+  ELOG_INFO(ELOG_MD_MAIN, "Active logging levels are optimized at compile time");
 
-#if (DEBUG_TRACE == YES)
-  LOG_TRACE("TRACE is enabled - this message has runtime cost");
+#if (ELOG_DEBUG_TRACE_ON == YES)
+  ELOG_TRACE(ELOG_MD_MAIN, "TRACE is enabled - this message has runtime cost");
 #else
-  LOG_TRACE("TRACE is disabled - this line compiles to: do {} while(0)");
+  ELOG_TRACE(ELOG_MD_MAIN, "TRACE is disabled - this line compiles to: do {} while(0)");
 #endif
 
-  LOG_INFO("Legacy macros also benefit from compile-time optimization:");
+  ELOG_INFO(ELOG_MD_MAIN, "Legacy macros also benefit from compile-time optimization:");
 
-#if (DEBUG_LOG == YES)
-  printLOG("printLOG is enabled - uses LOG_DEBUG internally");
+#if (ELOG_DEBUG_LOG_ON == YES)
+  printLOG(ELOG_MD_MAIN, "printLOG is enabled - uses ELOG_DEBUG internally");
 #else
-  printLOG("printLOG is disabled - compiles to empty macro");
+  printLOG(ELOG_MD_MAIN, "printLOG is disabled - compiles to empty macro");
 #endif
 
-  LOG_INFO_STR("=== End Performance Demo ===");
+  ELOG_INFO_STR(ELOG_MD_MAIN, "=== End Performance Demo ===");
 }
 
 /**
@@ -199,20 +199,20 @@ void performanceDemo(void) {
 void unifiedDebugControlDemo(void) {
   LOG_INIT_WITH_CONSOLE_AUTO();
 
-  LOG_INFO("=== Unified Debug Control Demo ===");
-  LOG_INFO("Single debug flags control both legacy and enhanced logging:");
+  ELOG_INFO(ELOG_MD_MAIN, "=== Unified Debug Control Demo ===");
+  ELOG_INFO(ELOG_MD_MAIN, "Single debug flags control both legacy and enhanced logging:");
 
-  LOG_INFO("Enhanced API: This uses LOG_INFO (DEBUG_INFO flag)");
-  printIF("Legacy API: This uses printIF (same DEBUG_INFO flag)");
+  ELOG_INFO(ELOG_MD_MAIN, "Enhanced API: This uses ELOG_INFO (ELOG_DEBUG_INFO_ON flag)");
+  printIF(ELOG_MD_MAIN, "Legacy API: This uses printIF (same ELOG_DEBUG_INFO_ON flag)");
 
-  LOG_ERROR("Enhanced API: This uses LOG_ERROR (DEBUG_ERR flag)");
-  printERR("Legacy API: This uses printERR (same DEBUG_ERR flag)");
+  ELOG_ERROR(ELOG_MD_MAIN, "Enhanced API: This uses ELOG_ERROR (ELOG_DEBUG_ERR_ON flag)");
+  printERR(ELOG_MD_MAIN, "Legacy API: This uses printERR (same ELOG_DEBUG_ERR_ON flag)");
 
-  LOG_DEBUG("Enhanced API: This uses LOG_DEBUG (DEBUG_LOG flag)");
-  printLOG("Legacy API: This uses printLOG (same DEBUG_LOG flag)");
+  ELOG_DEBUG(ELOG_MD_MAIN, "Enhanced API: This uses ELOG_DEBUG (ELOG_DEBUG_LOG_ON flag)");
+  printLOG(ELOG_MD_MAIN, "Legacy API: This uses printLOG (same ELOG_DEBUG_LOG_ON flag)");
 
-  LOG_INFO("Result: Consistent behavior between legacy and enhanced APIs");
-  LOG_INFO_STR("=== End Unified Debug Control Demo ===");
+  ELOG_INFO(ELOG_MD_MAIN, "Result: Consistent behavior between legacy and enhanced APIs");
+  ELOG_INFO_STR(ELOG_MD_MAIN, "=== End Unified Debug Control Demo ===");
 }
 
 /**
@@ -223,15 +223,15 @@ void subscriberManagementDemo(void) {
   LOG_INIT();
 
   LOG_SUBSCRIBE_CONSOLE();
-  LOG_INFO("Console subscriber added");
+  ELOG_INFO(ELOG_MD_MAIN, "Console subscriber added");
 
-  LOG_SUBSCRIBE(customMemorySubscriber, LOG_LEVEL_WARNING);
-  LOG_WARNING("Memory subscriber added - you should see this in both console and memory");
+  LOG_SUBSCRIBE(customMemorySubscriber, ELOG_LEVEL_DEBUG);
+  ELOG_WARNING(ELOG_MD_MAIN, "Memory subscriber added - you should see this in both console and memory");
 
   LOG_UNSUBSCRIBE(customMemorySubscriber);
-  LOG_WARNING("Memory subscriber removed - you should only see this in console");
+  ELOG_WARNING(ELOG_MD_MAIN, "Memory subscriber removed - you should only see this in console");
 
-  LOG_INFO_STR("Subscriber management demo complete");
+  ELOG_INFO_STR(ELOG_MD_MAIN, "Subscriber management demo complete");
 }
 
 /**
@@ -264,7 +264,7 @@ void completeLoggingDemo(void) {
   multipleSubscribersExample();
   printf("\n");
 
-  perFileThresholdExample();
+  perModuleThresholdExample();
   printf("\n");
 
   printf(LOG_COLOR(LOG_COLOR_GREEN) "==========================================\n");
@@ -279,8 +279,8 @@ void completeLoggingDemo(void) {
 void simpleAppInitializationExample(void) {
   LOG_INIT_WITH_CONSOLE_AUTO();
 
-  LOG_INFO("Application started successfully");
-  printIF("Legacy logging also works");
+  ELOG_INFO(ELOG_MD_MAIN, "Application started successfully");
+  printIF(ELOG_MD_MAIN, "Legacy logging also works");
 }
 
 /**
@@ -289,7 +289,7 @@ void simpleAppInitializationExample(void) {
  */
 void rtosReadinessExample(void) {
     elogUpdateRtosReady(true);
-    LOG_INFO("RTOS is now ready for logging");
+    ELOG_INFO(ELOG_MD_MAIN, "RTOS is now ready for logging");
 }
 
 /* Updated example usage for eLog */

@@ -28,12 +28,12 @@
 
 /* Usage in ThreadX threads: */
 void thread_entry(ULONG thread_input) {
-    // Set per-file log threshold for this thread's source file
-    elog_set_file_threshold("your_thread_file.c", LOG_LEVEL_DEBUG);
+    // Set per-module log threshold for this thread's module
+    elog_set_module_threshold(ELOG_MD_THREAD, ELOG_LEVEL_DEBUG);
 
     while(1) {
-        LOG_INFO("Thread [%s] processing", elog_get_task_name());
-        LOG_DEBUG("Debug info for ThreadX thread");
+        ELOG_INFO(ELOG_MD_THREAD, "Thread [%s] processing", elog_get_task_name());
+        ELOG_DEBUG(ELOG_MD_THREAD, "Debug info for ThreadX thread");
         tx_thread_sleep(100);
     }
 }
@@ -59,12 +59,12 @@ void thread_entry(ULONG thread_input) {
 /* Usage in FreeRTOS tasks: */
 /*
 void vTask1(void *pvParameters) {
-    // Set per-file log threshold for this task's source file
-    elog_set_file_threshold("your_task_file.c", LOG_LEVEL_INFO);
+    // Set per-module log threshold for this task's module
+    elog_set_module_threshold(ELOG_MD_TASK1, ELOG_LEVEL_DEBUG);
 
     for(;;) {
-        LOG_INFO("Task 1 running on core %d", xPortGetCoreID());
-        LOG_DEBUG("Debug info for FreeRTOS task");
+        ELOG_INFO(ELOG_MD_TASK1, "Task 1 running on core %d", xPortGetCoreID());
+        ELOG_DEBUG(ELOG_MD_TASK1, "Debug info for FreeRTOS task");
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -89,11 +89,11 @@ void vTask1(void *pvParameters) {
 /* Usage in ThreadX threads: */
 /*
 void thread_entry(ULONG thread_input) {
-    elog_set_file_threshold("your_thread_file.c", LOG_LEVEL_WARNING);
+    elog_set_module_threshold(ELOG_MD_THREAD, ELOG_LEVEL_DEBUG);
 
     while(1) {
-        LOG_INFO("Thread [%s] processing", elog_get_task_name());
-        LOG_WARNING("Warning info for ThreadX thread");
+        ELOG_INFO(ELOG_MD_THREAD, "Thread [%s] processing", elog_get_task_name());
+        ELOG_WARNING(ELOG_MD_THREAD, "Warning info for ThreadX thread");
         tx_thread_sleep(100);
     }
 }
@@ -118,11 +118,11 @@ void thread_entry(ULONG thread_input) {
 /* Usage in CMSIS-RTOS threads: */
 /*
 void thread_function(void *argument) {
-    elog_set_file_threshold("your_cmsis_thread_file.c", LOG_LEVEL_ERROR);
+    elog_set_module_threshold(ELOG_MD_CMSIS, ELOG_LEVEL_ERROR);
 
     while(1) {
-        LOG_INFO("CMSIS thread executing");
-        LOG_ERROR("Error info for CMSIS thread");
+        ELOG_INFO(ELOG_MD_CMSIS, "CMSIS thread executing");
+        ELOG_ERROR(ELOG_MD_CMSIS, "Error info for CMSIS thread");
         osDelay(1000);
     }
 }
@@ -146,12 +146,12 @@ void thread_function(void *argument) {
 /*
 int main(void) {
     LOG_INIT_WITH_CONSOLE_AUTO();
-    elog_set_file_threshold("main.c", LOG_LEVEL_INFO);
+    elog_set_module_threshold(ELOG_MD_MAIN, ELOG_LEVEL_DEBUG);
 
-    LOG_INFO("Bare metal application started");
+    ELOG_INFO(ELOG_MD_MAIN, "Bare metal application started");
     
     while(1) {
-        LOG_DEBUG("Main loop iteration");
+        ELOG_DEBUG(ELOG_MD_MAIN, "Main loop iteration");
         // Your main loop code
     }
 }
@@ -164,16 +164,16 @@ int main(void) {
 /* ========================================================================== */
 
 /* Memory optimization */
-// #define LOG_MAX_MESSAGE_LENGTH 64     /* Reduce for memory-constrained systems */
-// #define LOG_MAX_SUBSCRIBERS 3         /* Reduce if fewer outputs needed */
+// #define ELOG_MAX_MESSAGE_LENGTH 64     /* Reduce for memory-constrained systems */
+// #define ELOG_MAX_SUBSCRIBERS 3         /* Reduce if fewer outputs needed */
 
 /* Disable unused log levels for maximum performance */
-// #define DEBUG_TRACE NO               /* Disable verbose tracing */
-// #define DEBUG_LOG NO                 /* Disable debug messages in release */
+// #define ELOG_DEBUG_TRACE_ON NO               /* Disable verbose tracing */
+// #define ELOG_DEBUG_LOG_ON NO                 /* Disable debug messages in release */
 
 /* Disable features for minimal footprint */
 // #define USE_COLOR 0                  /* Disable colors for embedded terminals */
-// #define ENABLE_DEBUG_MESSAGES_WITH_FILE_NAME 0  /* Disable file/line info */
+// #define ENABLE_DEBUG_MESSAGES_WITH_MODULE 0  /* Disable file/line info */
 
 /* ========================================================================== */
 /* Integration with Existing Projects */

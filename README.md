@@ -24,7 +24,7 @@ A comprehensive, lightweight, and feature-rich logging system designed specifica
 - **Zero Overhead**: Thread safety can be completely disabled for single-threaded applications
 
 ### 🎯 Embedded-Specific Features
-- **Per-File Log Thresholds**: Set log levels for individual source files/modules at runtime for fine-grained control
+- **Per-Module Log Thresholds**: Set log levels for individual modules at runtime for fine-grained control
 - **Memory Efficient**: 128-byte message buffer, optimized for resource-constrained systems
 - **RTOS Ready**: Thread-safe design suitable for FreeRTOS, ThreadX, and other RTOSs
 - **MCU Error Codes**: Comprehensive set of error codes for common MCU subsystems
@@ -37,19 +37,20 @@ A comprehensive, lightweight, and feature-rich logging system designed specifica
 
 ## 🏆 Comparison with Original uLog
 
-| Feature | eLog | uLog | Advantage |
-|---------|------|------|-----------|
-| **Thread Safety** | ✅ Multi-RTOS | ❌ None | **eLog** |
-| **Compile-time Optimization** | ✅ Per-level | ❌ All-or-nothing | **eLog** |
-| **Backwards Compatibility** | ✅ Full | ❌ None | **eLog** |
-| **Built-in Console Colors** | ✅ ANSI colors | ❌ User provides | **eLog** |
-| **MCU Error Codes** | ✅ Comprehensive | ❌ None | **eLog** |
-| **Auto-threshold** | ✅ Smart detection | ❌ Manual only | **eLog** |
-| **Location Info** | ✅ File/line/func | ❌ User adds | **eLog** |
-| **Legacy Integration** | ✅ Seamless | ❌ Requires migration | **eLog** |
-| **Task Information** | ✅ Auto-detect | ❌ None | **eLog** |
-| **Memory Usage** | 128B buffer | 120B buffer | **eLog** |
-| **Max Subscribers** | 6 (configurable) | 6 (configurable) | Tie |
+| Feature                   | eLog V0.3         | uLog                | Advantage         |
+|---------------------------|-------------------|---------------------|-------------------|
+| **Thread Safety**         | ✅ Multi-RTOS      | ❌ None              | **eLog**          |
+| **Compile-time Optimization** | ✅ Per-level   | ❌ All-or-nothing    | **eLog**          |
+| **Backwards Compatibility**   | ✅ Full        | ❌ None              | **eLog**          |
+| **Built-in Console Colors**   | ✅ ANSI colors | ❌ User provides     | **eLog**          |
+| **MCU Error Codes**           | ✅ Comprehensive| ❌ None              | **eLog**          |
+| **Auto-threshold**            | ✅ Smart detection | ❌ Manual only   | **eLog**          |
+| **Location Info**             | ✅ Module/file/line/func | ❌ User adds | **eLog**          |
+| **Legacy Integration**        | ✅ Seamless    | ❌ Requires migration| **eLog**          |
+| **Task Information**          | ✅ Auto-detect | ❌ None              | **eLog**          |
+| **Per-Module Log Thresholds** | ✅ Runtime set | ❌ None              | **eLog**          |
+| **Memory Usage**              | 128B buffer    | 120B buffer          | **eLog**          |
+| **Max Subscribers**           | 6 (configurable)| 6 (configurable)    | Tie               |
 
 ## 📦 Quick Start
 
@@ -66,11 +67,11 @@ int main() {
     
     // Your existing code works unchanged!
     printIF("System initialized");           // Legacy macro
-    printERR("Error code: 0x%02X", COMM_ERR_I2C);
+    printERR("Error code: 0x%02X", ELOG_COMM_ERR_I2C);
     
     // Or use enhanced logging
-    LOG_INFO("Battery level: %d%%", battery_level);
-    LOG_ERROR("Sensor failure: 0x%02X", SENSOR_ERR_NOT_FOUND);
+    ELOG_INFO("Battery level: %d%%", battery_level);
+    ELOG_ERROR("Sensor failure: 0x%02X", ELOG_SENSOR_ERR_NOT_FOUND);
     
     return 0;
 }
@@ -80,36 +81,37 @@ int main() {
 Configure debug levels in `eLog.h`:
 
 ```c
-#define DEBUG_INFO YES      /* Information messages */
-#define DEBUG_WARN YES      /* Warning messages */
-#define DEBUG_ERR  YES      /* Error messages */
-#define DEBUG_LOG  YES      /* Debug messages */
-#define DEBUG_TRACE NO      /* Trace messages (verbose) */
-#define DEBUG_CRITICAL YES  /* Critical errors */
-#define DEBUG_ALWAYS YES    /* Always logged messages */
+#define ELOG_DEBUG_INFO_ON YES      /* Information messages */
+#define ELOG_DEBUG_WARN_ON YES      /* Warning messages */
+#define ELOG_DEBUG_ERR_ON  YES      /* Error messages */
+#define ELOG_DEBUG_LOG_ON  YES      /* Debug messages */
+#define ELOG_DEBUG_TRACE_ON NO      /* Trace messages (verbose) */
+#define ELOG_DEBUG_CRITICAL_ON YES  /* Critical errors */
+#define ELOG_DEBUG_ALWAYS_ON YES    /* Always logged messages */
 ```
 
-### Per-File Log Level Example
-You can set log levels for specific source files (modules) at runtime:
+### Per-Module Log Level Example
+
+You can set log levels for specific modules at runtime:
 
 ```c
 #include "eLog.h"
 
 void sensorInit(void) {
-    elog_set_file_threshold("sensor.c", LOG_LEVEL_DEBUG); // Enable debug logs for sensor.c only
-    LOG_INFO("Sensor initialized"); // Will be shown if threshold allows
+    elog_set_module_threshold(ELOG_MD_SENSOR, ELOG_LEVEL_DEBUG); // Enable debug logs for SENSOR module
+    ELOG_INFO(ELOG_MD_SENSOR, "Sensor initialized"); // Will be shown if threshold allows
 }
 ```
 
 ## ⚙️ Advanced Usage
 
-### Per-File Log Threshold API
+### Per-Module Log Threshold API
 
 ```c
-log_err_t elog_set_file_threshold(const char *filename, log_level_t threshold);
-log_level_t elog_get_file_threshold(const char *filename);
+log_err_t elog_set_module_threshold(elog_module_t module, log_level_t threshold);
+log_level_t elog_get_module_threshold(elog_module_t module);
 ```
-Use these functions to control logging verbosity for each module/source file.
+Use these functions to control logging verbosity for each module.
 
 ### Custom Subscribers
 ```c
@@ -120,7 +122,7 @@ void my_file_logger(log_level_t level, const char *msg) {
 }
 
 // Subscribe custom logger for ERROR and above
-LOG_SUBSCRIBE(my_file_logger, LOG_LEVEL_ERROR);
+LOG_SUBSCRIBE(my_file_logger, ELOG_LEVEL_ERROR);
 ```
 
 ### Multiple Output Destinations
@@ -128,57 +130,57 @@ LOG_SUBSCRIBE(my_file_logger, LOG_LEVEL_ERROR);
 LOG_INIT();
 
 // Console for all messages
-LOG_SUBSCRIBE(elog_console_subscriber, LOG_LEVEL_DEBUG);
+LOG_SUBSCRIBE(elog_console_subscriber, ELOG_LEVEL_DEBUG);
 
 // File for errors only
-LOG_SUBSCRIBE(my_file_logger, LOG_LEVEL_ERROR);
+LOG_SUBSCRIBE(my_file_logger, ELOG_LEVEL_ERROR);
 
 // Network for critical alerts
-LOG_SUBSCRIBE(my_network_logger, LOG_LEVEL_CRITICAL);
+LOG_SUBSCRIBE(my_network_logger, ELOG_LEVEL_CRITICAL);
 
 // Memory buffer for debugging
-LOG_SUBSCRIBE(my_memory_logger, LOG_LEVEL_TRACE);
+LOG_SUBSCRIBE(my_memory_logger, ELOG_LEVEL_TRACE);
 ```
 
 ### Error Code Integration
 ```c
 // Comprehensive MCU error codes included
 if (i2c_status != HAL_OK) {
-    LOG_ERROR("I2C communication failed: 0x%02X", COMM_ERR_I2C);
+    ELOG_ERROR("I2C communication failed: 0x%02X", ELOG_COMM_ERR_I2C);
 }
 
 if (battery_voltage < MIN_VOLTAGE) {
-    LOG_WARNING("Low battery: 0x%02X", PWR_ERR_LOW_VOLTAGE);
+    ELOG_WARNING("Low battery: 0x%02X", ELOG_PWR_ERR_LOW_VOLTAGE);
 }
 
 // Critical system errors
 if (stack_overflow_detected) {
-    LOG_CRITICAL("Stack overflow detected: 0x%02X", CRITICAL_ERR_STACK);
+    ELOG_CRITICAL("Stack overflow detected: 0x%02X", ELOG_CRITICAL_ERR_STACK);
 }
 ```
 
 ## 📚 Documentation
 
 ### Log Levels
-- `LOG_LEVEL_TRACE` (100): Function entry/exit, detailed flow
-- `LOG_LEVEL_DEBUG` (101): Variable values, state changes  
-- `LOG_LEVEL_INFO` (102): Normal operation events
-- `LOG_LEVEL_WARNING` (103): Recoverable errors, performance issues
-- `LOG_LEVEL_ERROR` (104): Serious problems requiring attention
-- `LOG_LEVEL_CRITICAL` (105): System failures, unrecoverable errors
-- `LOG_LEVEL_ALWAYS` (106): Essential system messages
+- `ELOG_LEVEL_TRACE` (100): Function entry/exit, detailed flow
+- `ELOG_LEVEL_DEBUG` (101): Variable values, state changes  
+- `ELOG_LEVEL_DEBUG` (102): Normal operation events
+- `ELOG_LEVEL_DEBUG` (103): Recoverable errors, performance issues
+- `ELOG_LEVEL_ERROR` (104): Serious problems requiring attention
+- `ELOG_LEVEL_CRITICAL` (105): System failures, unrecoverable errors
+- `ELOG_LEVEL_ALWAYS` (106): Essential system messages
 
 ### Available Macros
 
 #### Enhanced Logging
 ```c
-LOG_TRACE("Function entry: %s", __func__);
-LOG_DEBUG("Variable x = %d", x);
-LOG_INFO("System ready");
-LOG_WARNING("Performance degraded");  
-LOG_ERROR("Operation failed: 0x%02X", error_code);
-LOG_CRITICAL("System failure");
-LOG_ALWAYS("Boot complete");
+ELOG_TRACE("Function entry: %s", __func__);
+ELOG_DEBUG("Variable x = %d", x);
+ELOG_INFO("System ready");
+ELOG_WARNING("Performance degraded");  
+ELOG_ERROR("Operation failed: 0x%02X", error_code);
+ELOG_CRITICAL("System failure");
+ELOG_ALWAYS("Boot complete");
 ```
 
 #### Legacy Compatibility
@@ -232,14 +234,14 @@ void task1(void *pvParameters) {
     LOG_INIT_WITH_THREAD_INFO();  /* Initialize with task name in logs */
     
     for(;;) {
-        LOG_INFO("Task 1 is running");
+        ELOG_INFO("Task 1 is running");
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
 void task2(void *pvParameters) {
     for(;;) {
-        LOG_DEBUG("Task 2 processing data");
+        ELOG_DEBUG("Task 2 processing data");
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
@@ -257,7 +259,7 @@ void thread_entry(ULONG thread_input) {
     LOG_INIT_WITH_CONSOLE_AUTO();
     
     while(1) {
-        LOG_INFO("ThreadX thread [%s] executing", elog_get_task_name());
+        ELOG_INFO("ThreadX thread [%s] executing", elog_get_task_name());
         tx_thread_sleep(100);
     }
 }
@@ -272,11 +274,11 @@ void thread_entry(ULONG thread_input) {
 
 int main(void) {
     LOG_INIT_WITH_CONSOLE_AUTO();
-    LOG_INFO("Bare metal application started");
+    ELOG_INFO("Bare metal application started");
     
     while(1) {
         // Main loop
-        LOG_DEBUG("Main loop iteration");
+        ELOG_DEBUG("Main loop iteration");
     }
 }
 ```
@@ -312,16 +314,16 @@ void elog_console_subscriber_with_thread(log_level_t level, const char *msg);
 
 ```c
 /* Subscriber configuration */
-#define LOG_MAX_SUBSCRIBERS 6           /* Maximum concurrent outputs */
+#define ELOG_MAX_SUBSCRIBERS 6           /* Maximum concurrent outputs */
 
 /* Message buffer size */
-#define LOG_MAX_MESSAGE_LENGTH 128      /* Buffer size for formatted messages */
+#define ELOG_MAX_MESSAGE_LENGTH 128      /* Buffer size for formatted messages */
 
 /* Color support */
 #define USE_COLOR 1                     /* Enable ANSI colors in console */
 
 /* Location information */
-#define ENABLE_DEBUG_MESSAGES_WITH_FILE_NAME 0  /* Include file/line info */
+#define ENABLE_DEBUG_MESSAGES_WITH_MODULE 0  /* Include file/line info */
 ```
 
 ## 💾 Memory Usage
@@ -338,9 +340,9 @@ void elog_console_subscriber_with_thread(log_level_t level, const char *msg);
 
 ### Memory Optimization Tips
 - Set `ELOG_THREAD_SAFE=0` for single-threaded applications
-- Reduce `LOG_MAX_MESSAGE_LENGTH` for memory-constrained systems
+- Reduce `ELOG_MAX_MESSAGE_LENGTH` for memory-constrained systems
 - Disable unused log levels at compile time
-- Use `LOG_MAX_SUBSCRIBERS` to limit subscriber array size
+- Use `ELOG_MAX_SUBSCRIBERS` to limit subscriber array size
 
 ## 🧪 Testing
 
