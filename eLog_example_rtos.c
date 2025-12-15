@@ -16,15 +16,15 @@
 /* Example Custom Subscribers */
 /* ========================================================================== */
 
-void file_subscriber(log_level_t level, const char *msg) {
+void file_subscriber(elog_level_t level, const char *msg) {
   printf("FILE[%s]: %s\n", elog_level_name(level), msg);
 }
 
-void memory_subscriber(log_level_t level, const char *msg) {
+void memory_subscriber(elog_level_t level, const char *msg) {
   printf("MEM[%s]: %s\n", elog_level_name(level), msg);
 }
 
-void network_subscriber(log_level_t level, const char *msg) {
+void network_subscriber(elog_level_t level, const char *msg) {
   printf("NET[%s]: %s\n", elog_level_name(level), msg);
 }
 
@@ -158,7 +158,7 @@ void thread_safety_example(void) {
   ELOG_INFO(ELOG_MD_MAIN, "RTOS type: %d", ELOG_RTOS_TYPE);
   ELOG_INFO(ELOG_MD_MAIN, "Current task: %s (ID: 0x%08X)", elog_get_task_name(), (unsigned int)elog_get_task_id());
 
-  log_err_t result = log_subscribe_safe(memory_subscriber, ELOG_LEVEL_DEBUG);
+  elog_err_t result = log_subscribe_safe(memory_subscriber, ELOG_LEVEL_DEBUG);
   if (result == ELOG_ERR_NONE) {
     ELOG_INFO(ELOG_MD_MAIN, "Successfully subscribed memory subscriber in thread-safe mode");
   } else {
@@ -223,7 +223,7 @@ void rtos_features_example(void) {
   ELOG_INFO(ELOG_MD_MAIN, "Current task: %s", task_name);
   ELOG_INFO(ELOG_MD_MAIN, "Task ID: 0x%08X", (unsigned int)task_id);
 
-  log_err_t result = log_subscribe_safe(file_subscriber, ELOG_LEVEL_DEBUG);
+  elog_err_t result = log_subscribe_safe(file_subscriber, ELOG_LEVEL_DEBUG);
   ELOG_INFO(ELOG_MD_MAIN, "Subscribe result: %d", result);
 
   ELOG_WARNING(ELOG_MD_MAIN, "Test message to new subscriber");

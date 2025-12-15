@@ -67,7 +67,7 @@ void legacyLoggingExample(void) {
  * @param  level: Log level
  * @param  msg: Formatted message
  */
-void customFileSubscriber(log_level_t level, const char *msg) {
+void customFileSubscriber(elog_level_t level, const char *msg) {
   printf("[FILE] %s: %s\n", elog_level_name(level), msg);
 }
 
@@ -76,7 +76,7 @@ void customFileSubscriber(log_level_t level, const char *msg) {
  * @param  level: Log level
  * @param  msg: Formatted message
  */
-void customMemorySubscriber(log_level_t level, const char *msg) {
+void customMemorySubscriber(elog_level_t level, const char *msg) {
   static int message_count = 0;
   message_count++;
   printf("[MEM #%d] %s: %s\n", message_count, elog_level_name(level), msg);
@@ -114,7 +114,7 @@ void autoThresholdExample(void) {
 
   ELOG_INFO(ELOG_MD_MAIN, "=== Auto Threshold Demo ===");
 
-  log_level_t threshold = elog_get_auto_threshold();
+  elog_level_t threshold = elog_get_auto_threshold();
   ELOG_INFO(ELOG_MD_MAIN, "Current auto-threshold: %s (%d)", elog_level_name(threshold), threshold);
 
   ELOG_INFO(ELOG_MD_MAIN, "Based on debug flags, console subscriber will receive:");

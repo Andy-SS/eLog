@@ -108,14 +108,14 @@ void sensorInit(void) {
 ### Per-Module Log Threshold API
 
 ```c
-log_err_t elog_set_module_threshold(elog_module_t module, log_level_t threshold);
-log_level_t elog_get_module_threshold(elog_module_t module);
+elog_err_t elog_set_module_threshold(elog_module_t module, elog_level_t threshold);
+elog_level_t elog_get_module_threshold(elog_module_t module);
 ```
 Use these functions to control logging verbosity for each module.
 
 ### Custom Subscribers
 ```c
-void my_file_logger(log_level_t level, const char *msg) {
+void my_file_logger(elog_level_t level, const char *msg) {
     FILE *log_file = fopen("system.log", "a");
     fprintf(log_file, "[%s] %s\n", log_level_name(level), msg);
     fclose(log_file);
@@ -286,17 +286,17 @@ int main(void) {
 ### Thread-Safe API Functions
 ```c
 /* Thread-safe versions (automatically used when ELOG_THREAD_SAFE=1) */
-void elog_message_safe(log_level_t level, const char *fmt, ...);
-void elog_message_with_location_safe(log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
-log_err_t elog_subscribe_safe(log_subscriber_t fn, log_level_t threshold);
-log_err_t elog_unsubscribe_safe(log_subscriber_t fn);
+void elog_message_safe(elog_level_t level, const char *fmt, ...);
+void elog_message_with_location_safe(elog_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
+elog_err_t elog_subscribe_safe(log_subscriber_t fn, elog_level_t threshold);
+elog_err_t elog_unsubscribe_safe(log_subscriber_t fn);
 
 /* Task information functions */
 const char *elog_get_task_name(void);    /* Get current task name */
 uint32_t elog_get_task_id(void);         /* Get current task ID */
 
 /* Thread-aware console subscriber */
-void elog_console_subscriber_with_thread(log_level_t level, const char *msg);
+void elog_console_subscriber_with_thread(elog_level_t level, const char *msg);
 ```
 
 ### Performance Considerations

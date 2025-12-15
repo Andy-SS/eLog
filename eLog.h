@@ -201,128 +201,119 @@ typedef enum {
   ELOG_LEVEL_ERROR,          /*!< Errors: serious problems that need attention */
   ELOG_LEVEL_CRITICAL,       /*!< Critical: system failure, unrecoverable errors */
   ELOG_LEVEL_ALWAYS          /*!< Always logged: essential system messages */
-} log_level_t;
+} elog_level_t;
 
 /**
  * @brief Log subscriber function prototype
  * @param level: Severity level of the message
  * @param msg: Formatted message string (temporary - copy if needed)
  */
-typedef void (*log_subscriber_t)(log_level_t level, const char *msg);
+typedef void (*log_subscriber_t)(elog_level_t level, const char *msg);
 
 /**
- * @brief Error codes for enhanced logging
+ * @brief Unified Error Codes Enumeration
+ * Comprehensive error codes for logging system and MCU subsystems (0x00-0xFF)
  */
 typedef enum {
-  ELOG_ERR_NONE = 0,
-  ELOG_ERR_SUBSCRIBERS_EXCEEDED,
-  ELOG_ERR_NOT_SUBSCRIBED,
-  ELOG_ERR_INVALID_LEVEL
-} log_err_t;
+  /* Logging System Error Codes (0x00-0x0F) */
+  ELOG_ERR_NONE              = 0x00,    /*!< No error / Operation successful */
+  ELOG_ERR_SUBSCRIBERS_EXCEEDED = 0x01, /*!< Maximum subscribers exceeded */
+  ELOG_ERR_NOT_SUBSCRIBED    = 0x02,    /*!< Subscriber not found */
+  ELOG_ERR_INVALID_LEVEL     = 0x03,    /*!< Invalid log level */
 
-#if defined(USE_DEBUG_UART_TX_AS_DEBUG_IO)
-#if (ELOG_DEBUG_INFO_ON == YES) || (ELOG_DEBUG_ERR_ON == YES) && (ELOG_DEBUG_LOG_ON == YES)
-#error "USE_DEBUG_UART_TX_AS_DEBUG_IO not allowed when any of DEBUG_<xxx> is YES"
-#endif
-#endif
+  /* System Error Codes (0x10-0x1F) */
+  ELOG_SYS_ERR_INIT          = 0x10,    /*!< System initialization error */
+  ELOG_SYS_ERR_CONFIG        = 0x11,    /*!< Configuration error */
+  ELOG_SYS_ERR_TIMEOUT       = 0x12,    /*!< Operation timeout */
+  ELOG_SYS_ERR_BUSY          = 0x13,    /*!< System busy */
+  ELOG_SYS_ERR_NOT_READY     = 0x14,    /*!< System not ready */
+  ELOG_SYS_ERR_INVALID_STATE = 0x15,    /*!< Invalid system state */
+  ELOG_SYS_ERR_MEMORY        = 0x16,    /*!< Memory allocation error */
+  ELOG_SYS_ERR_WATCHDOG      = 0x17,    /*!< Watchdog reset occurred */
 
-/* ========================================================================== */
-/* General MCU Project Error Codes */
-/* ========================================================================== */
+  /* Communication Error Codes (0x20-0x3F) */
+  ELOG_COMM_ERR_UART         = 0x20,    /*!< UART communication error */
+  ELOG_COMM_ERR_I2C          = 0x21,    /*!< I2C communication error */
+  ELOG_COMM_ERR_SPI          = 0x22,    /*!< SPI communication error */
+  ELOG_COMM_ERR_CAN          = 0x23,    /*!< CAN communication error */
+  ELOG_COMM_ERR_USB          = 0x24,    /*!< USB communication error */
+  ELOG_COMM_ERR_BLE          = 0x25,    /*!< Bluetooth LE error */
+  ELOG_COMM_ERR_WIFI         = 0x26,    /*!< WiFi communication error */
+  ELOG_COMM_ERR_ETH          = 0x27,    /*!< Ethernet communication error */
+  ELOG_COMM_ERR_CHECKSUM     = 0x28,    /*!< Data checksum error */
+  ELOG_COMM_ERR_FRAME        = 0x29,    /*!< Frame format error */
+  ELOG_COMM_ERR_OVERRUN      = 0x2A,    /*!< Buffer overrun */
+  ELOG_COMM_ERR_UNDERRUN     = 0x2B,    /*!< Buffer underrun */
 
-/* System Error Codes (0x10-0x1F) */
-#define ELOG_SYS_OK                0x00    /* Operation successful */
-#define ELOG_SYS_ERR_INIT          0x10    /* System initialization error */
-#define ELOG_SYS_ERR_CONFIG        0x11    /* Configuration error */
-#define ELOG_SYS_ERR_TIMEOUT       0x12    /* Operation timeout */
-#define ELOG_SYS_ERR_BUSY          0x13    /* System busy */
-#define ELOG_SYS_ERR_NOT_READY     0x14    /* System not ready */
-#define ELOG_SYS_ERR_INVALID_STATE 0x15    /* Invalid system state */
-#define ELOG_SYS_ERR_MEMORY        0x16    /* Memory allocation error */
-#define ELOG_SYS_ERR_WATCHDOG      0x17    /* Watchdog reset occurred */
+  /* Sensor Error Codes (0x40-0x5F) */
+  ELOG_SENSOR_ERR_NOT_FOUND  = 0x40,    /*!< Sensor not detected */
+  ELOG_SENSOR_ERR_CALIB      = 0x41,    /*!< Sensor calibration error */
+  ELOG_SENSOR_ERR_RANGE      = 0x42,    /*!< Sensor value out of range */
+  ELOG_SENSOR_ERR_ACCURACY   = 0x43,    /*!< Sensor accuracy degraded */
+  ELOG_ACCEL_ERR             = 0x44,    /*!< Accelerometer error */
+  ELOG_GYRO_ERR              = 0x45,    /*!< Gyroscope error */
+  ELOG_MAG_ERR               = 0x46,    /*!< Magnetometer error */
+  ELOG_PRESS_ERR             = 0x47,    /*!< Pressure sensor error */
+  ELOG_HUMID_ERR             = 0x48,    /*!< Humidity sensor error */
+  ELOG_LIGHT_ERR             = 0x49,    /*!< Light sensor error */
 
-/* Communication Error Codes (0x20-0x3F) */
-#define ELOG_COMM_ERR_UART         0x20    /* UART communication error */
-#define ELOG_COMM_ERR_I2C          0x21    /* I2C communication error */
-#define ELOG_COMM_ERR_SPI          0x22    /* SPI communication error */
-#define ELOG_COMM_ERR_CAN          0x23    /* CAN communication error */
-#define ELOG_COMM_ERR_USB          0x24    /* USB communication error */
-#define ELOG_COMM_ERR_BLE          0x25    /* Bluetooth LE error */
-#define ELOG_COMM_ERR_WIFI         0x26    /* WiFi communication error */
-#define ELOG_COMM_ERR_ETH          0x27    /* Ethernet communication error */
-#define ELOG_COMM_ERR_CHECKSUM     0x28    /* Data checksum error */
-#define ELOG_COMM_ERR_FRAME        0x29    /* Frame format error */
-#define ELOG_COMM_ERR_OVERRUN      0x2A    /* Buffer overrun */
-#define ELOG_COMM_ERR_UNDERRUN     0x2B    /* Buffer underrun */
+  /* Power Management Error Codes (0x60-0x7F) */
+  ELOG_PWR_ERR_LOW_VOLTAGE   = 0x60,    /*!< Low voltage detected */
+  ELOG_PWR_ERR_OVERVOLTAGE   = 0x61,    /*!< Overvoltage detected */
+  ELOG_PWR_ERR_OVERCURRENT   = 0x62,    /*!< Overcurrent detected */
+  ELOG_PWR_ERR_THERMAL       = 0x63,    /*!< Thermal shutdown */
+  ELOG_PWR_ERR_CHARGER       = 0x64,    /*!< Charger error */
+  ELOG_PWR_ERR_REGULATOR     = 0x65,    /*!< Voltage regulator error */
+  ELOG_PWR_ERR_BROWNOUT      = 0x66,    /*!< Brownout detected */
 
-/* Sensor Error Codes (0x40-0x5F) */
-#define ELOG_SENSOR_ERR_NOT_FOUND  0x40    /* Sensor not detected */
-#define ELOG_SENSOR_ERR_CALIB      0x41    /* Sensor calibration error */
-#define ELOG_SENSOR_ERR_RANGE      0x42    /* Sensor value out of range */
-#define ELOG_SENSOR_ERR_ACCURACY   0x43    /* Sensor accuracy degraded */
-#define ELOG_ACCEL_ERR             0x44    /* Accelerometer error */
-#define ELOG_GYRO_ERR              0x45    /* Gyroscope error */
-#define ELOG_MAG_ERR               0x46    /* Magnetometer error */
-#define ELOG_PRESS_ERR             0x47    /* Pressure sensor error */
-#define ELOG_HUMID_ERR             0x48    /* Humidity sensor error */
-#define ELOG_LIGHT_ERR             0x49    /* Light sensor error */
+  /* Storage Error Codes (0x80-0x9F) */
+  ELOG_STORAGE_ERR_READ      = 0x80,    /*!< Storage read error */
+  ELOG_STORAGE_ERR_WRITE     = 0x81,    /*!< Storage write error */
+  ELOG_STORAGE_ERR_ERASE     = 0x82,    /*!< Storage erase error */
+  ELOG_STORAGE_ERR_FULL      = 0x83,    /*!< Storage full */
+  ELOG_STORAGE_ERR_CORRUPT   = 0x84,    /*!< Data corruption detected */
+  ELOG_FLASH_ERR             = 0x85,    /*!< Flash memory error */
+  ELOG_EEPROM_ERR            = 0x86,    /*!< EEPROM error */
+  ELOG_SD_ERR                = 0x87,    /*!< SD card error */
 
-/* Power Management Error Codes (0x60-0x7F) */
-#define ELOG_PWR_ERR_LOW_VOLTAGE   0x60    /* Low voltage detected */
-#define ELOG_PWR_ERR_OVERVOLTAGE   0x61    /* Overvoltage detected */
-#define ELOG_PWR_ERR_OVERCURRENT   0x62    /* Overcurrent detected */
-#define ELOG_PWR_ERR_THERMAL       0x63    /* Thermal shutdown */
-#define ELOG_PWR_ERR_CHARGER       0x64    /* Charger error */
-#define ELOG_PWR_ERR_REGULATOR     0x65    /* Voltage regulator error */
-#define ELOG_PWR_ERR_BROWNOUT      0x66    /* Brownout detected */
+  /* Application Error Codes (0xA0-0xBF) */
+  ELOG_APP_ERR_INVALID_PARAM = 0xA0,    /*!< Invalid parameter */
+  ELOG_RTC_ERR               = 0xA3,    /*!< Real-time clock error */
+  ELOG_CRYPTO_ERR            = 0xA4,    /*!< Cryptographic operation error */
+  ELOG_AUTH_ERR              = 0xA5,    /*!< Authentication error */
+  ELOG_PROT_ERR              = 0xA6,    /*!< Protocol error */
+  ELOG_DATA_ERR              = 0xA7,    /*!< Data validation error */
+  ELOG_ALGO_ERR              = 0xA8,    /*!< Algorithm execution error */
 
-/* Storage Error Codes (0x80-0x9F) */
-#define ELOG_STORAGE_ERR_READ      0x80    /* Storage read error */
-#define ELOG_STORAGE_ERR_WRITE     0x81    /* Storage write error */
-#define ELOG_STORAGE_ERR_ERASE     0x82    /* Storage erase error */
-#define ELOG_STORAGE_ERR_FULL      0x83    /* Storage full */
-#define ELOG_STORAGE_ERR_CORRUPT   0x84    /* Data corruption detected */
-#define ELOG_FLASH_ERR             0x85    /* Flash memory error */
-#define ELOG_EEPROM_ERR            0x86    /* EEPROM error */
-#define ELOG_SD_ERR                0x87    /* SD card error */
+  /* Hardware Error Codes (0xC0-0xDF) */
+  ELOG_HW_ERR_GPIO           = 0xC0,    /*!< GPIO configuration error */
+  ELOG_HW_ERR_CLOCK          = 0xC1,    /*!< Clock configuration error */
+  ELOG_HW_ERR_DMA            = 0xC2,    /*!< DMA error */
+  ELOG_HW_ERR_TIMER          = 0xC3,    /*!< Timer error */
+  ELOG_HW_ERR_ADC            = 0xC4,    /*!< ADC error */
+  ELOG_HW_ERR_DAC            = 0xC5,    /*!< DAC error */
+  ELOG_HW_ERR_PWM            = 0xC6,    /*!< PWM error */
+  ELOG_HW_ERR_IRQ            = 0xC7,    /*!< Interrupt error */
 
-/* Application Error Codes (0xA0-0xBF) */
-#define ELOG_APP_ERR_INVALID_PARAM 0xA0    /* Invalid parameter */
-/* BATT_ERR and TEMP_ERR already defined above */
-#define ELOG_RTC_ERR               0xA3    /* Real-time clock error */
-#define ELOG_CRYPTO_ERR            0xA4    /* Cryptographic operation error */
-#define ELOG_AUTH_ERR              0xA5    /* Authentication error */
-#define ELOG_PROT_ERR              0xA6    /* Protocol error */
-#define ELOG_DATA_ERR              0xA7    /* Data validation error */
-#define ELOG_ALGO_ERR              0xA8    /* Algorithm execution error */
+  /* RTOS Error Codes (0xE0-0xEF) */
+  ELOG_RTOS_ERR_TASK         = 0xE0,    /*!< Task creation/management error */
+  ELOG_RTOS_ERR_QUEUE        = 0xE1,    /*!< Queue operation error */
+  ELOG_RTOS_ERR_SEMAPHORE    = 0xE2,    /*!< Semaphore error */
+  ELOG_RTOS_ERR_MUTEX        = 0xE3,    /*!< Mutex error */
+  ELOG_RTOS_ERR_TIMER        = 0xE4,    /*!< RTOS timer error */
+  ELOG_RTOS_ERR_MEMORY       = 0xE5,    /*!< RTOS memory allocation error */
 
-/* Hardware Error Codes (0xC0-0xDF) */
-#define ELOG_HW_ERR_GPIO           0xC0    /* GPIO configuration error */
-#define ELOG_HW_ERR_CLOCK          0xC1    /* Clock configuration error */
-#define ELOG_HW_ERR_DMA            0xC2    /* DMA error */
-#define ELOG_HW_ERR_TIMER          0xC3    /* Timer error */
-#define ELOG_HW_ERR_ADC            0xC4    /* ADC error */
-#define ELOG_HW_ERR_DAC            0xC5    /* DAC error */
-#define ELOG_HW_ERR_PWM            0xC6    /* PWM error */
-#define ELOG_HW_ERR_IRQ            0xC7    /* Interrupt error */
+  /* Critical System Error Codes (0xF0-0xFF) */
+  ELOG_CRITICAL_ERR_STACK    = 0xF0,    /*!< Stack overflow */
+  ELOG_CRITICAL_ERR_HEAP     = 0xF1,    /*!< Heap corruption */
+  ELOG_CRITICAL_ERR_ASSERT   = 0xF2,    /*!< Assertion failure */
+  ELOG_CRITICAL_ERR_HARDFAULT = 0xF3,   /*!< Hard fault exception */
+  ELOG_CRITICAL_ERR_MEMFAULT = 0xF4,    /*!< Memory management fault */
+  ELOG_CRITICAL_ERR_BUSFAULT = 0xF5,    /*!< Bus fault */
+  ELOG_CRITICAL_ERR_USAGE    = 0xF6,    /*!< Usage fault */
+  ELOG_CRITICAL_ERR_UNKNOWN  = 0xFF     /*!< Unknown critical error */
+} elog_err_t;
 
-/* RTOS Error Codes (0xE0-0xEF) */
-#define ELOG_RTOS_ERR_TASK         0xE0    /* Task creation/management error */
-#define ELOG_RTOS_ERR_QUEUE        0xE1    /* Queue operation error */
-#define ELOG_RTOS_ERR_SEMAPHORE    0xE2    /* Semaphore error */
-#define ELOG_RTOS_ERR_MUTEX        0xE3    /* Mutex error */
-#define ELOG_RTOS_ERR_TIMER        0xE4    /* RTOS timer error */
-#define ELOG_RTOS_ERR_MEMORY       0xE5    /* RTOS memory allocation error */
-
-/* Critical System Error Codes (0xF0-0xFF) */
-#define ELOG_CRITICAL_ERR_STACK    0xF0    /* Stack overflow */
-#define ELOG_CRITICAL_ERR_HEAP     0xF1    /* Heap corruption */
-#define ELOG_CRITICAL_ERR_ASSERT   0xF2    /* Assertion failure */
-#define ELOG_CRITICAL_ERR_HARDFAULT 0xF3   /* Hard fault exception */
-#define ELOG_CRITICAL_ERR_MEMFAULT 0xF4    /* Memory management fault */
-#define ELOG_CRITICAL_ERR_BUSFAULT 0xF5    /* Bus fault */
-#define ELOG_CRITICAL_ERR_USAGE    0xF6    /* Usage fault */
-#define ELOG_CRITICAL_ERR_UNKNOWN  0xFF    /* Unknown critical error */
 
 /* ========================================================================== */
 /* Enhanced Logging API (uLog-inspired) */
@@ -340,27 +331,27 @@ void elog_init(void);
  * @param threshold: Minimum level to send to this subscriber
  * @return Error code
  */
-log_err_t elog_subscribe(log_subscriber_t fn, log_level_t threshold);
+elog_err_t elog_subscribe(log_subscriber_t fn, elog_level_t threshold);
 
 /**
  * @brief Unsubscribe a function from receiving log messages
  * @param fn: Function to unsubscribe
  * @return Error code
  */
-log_err_t elog_unsubscribe(log_subscriber_t fn);
+elog_err_t elog_unsubscribe(log_subscriber_t fn);
 
 /**
  * @brief Get the string name of a log level
  * @param level: Log level
  * @return String name of the log level
  */
-const char *elog_level_name(log_level_t level);
+const char *elog_level_name(elog_level_t level);
 
 /**
  * @brief Get the automatically calculated threshold level
  * @return The ELOG_DEFAULT_THRESHOLD value
  */
-log_level_t elog_get_auto_threshold(void);
+elog_level_t elog_get_auto_threshold(void);
 
 /**
  * @brief Set log threshold for a specific module
@@ -368,14 +359,14 @@ log_level_t elog_get_auto_threshold(void);
  * @param threshold: Log level threshold
  * @return ELOG_ERR_NONE on success
  */
-log_err_t elog_set_module_threshold(elog_module_t module, log_level_t threshold);
+elog_err_t elog_set_module_threshold(elog_module_t module, elog_level_t threshold);
 
 /**
  * @brief Get log threshold for a specific module
  * @param module: Module identifier
  * @return threshold, or ELOG_DEFAULT_THRESHOLD if not set
  */
-log_level_t elog_get_module_threshold(elog_module_t module);
+elog_level_t elog_get_module_threshold(elog_module_t module);
 
 /**
  * @brief Send a formatted message to all subscribers
@@ -383,7 +374,7 @@ log_level_t elog_get_module_threshold(elog_module_t module);
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void elog_message(elog_module_t module, log_level_t level, const char *fmt, ...);
+void elog_message(elog_module_t module, elog_level_t level, const char *fmt, ...);
 
 /**
  * @brief Send a formatted message with location info to all subscribers
@@ -394,7 +385,7 @@ void elog_message(elog_module_t module, log_level_t level, const char *fmt, ...)
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void elog_message_with_location(elog_module_t module, log_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
+void elog_message_with_location(elog_module_t module, elog_level_t level, const char *file, const char *func, int line, const char *fmt, ...);
 
 /**
  * @brief Thread-safe version of log_subscribe
@@ -402,14 +393,14 @@ void elog_message_with_location(elog_module_t module, log_level_t level, const c
  * @param threshold: Minimum level to send to this subscriber
  * @return Error code
  */
-log_err_t elog_subscribe(log_subscriber_t fn, log_level_t threshold);
+elog_err_t elog_subscribe(log_subscriber_t fn, elog_level_t threshold);
 
 /**
  * @brief Thread-safe version of log_unsubscribe
  * @param fn: Function to unsubscribe
  * @return Error code
  */
-log_err_t elog_unsubscribe(log_subscriber_t fn);
+elog_err_t elog_unsubscribe(log_subscriber_t fn);
 
 #if (ELOG_THREAD_SAFE == 1)
 /* Thread info functions for enhanced debugging (only available when threading enabled) */
@@ -417,7 +408,7 @@ const char *elog_get_task_name(void);
 uint32_t elog_get_task_id(void);
 
 /* Example console subscriber with thread info */
-extern void elog_console_subscriber_with_thread(log_level_t level, const char *msg);
+extern void elog_console_subscriber_with_thread(elog_level_t level, const char *msg);
 #endif
 
 /* ========================================================================== */
@@ -433,7 +424,7 @@ extern void elog_console_subscriber_with_thread(log_level_t level, const char *m
 #define LOG_LEVEL_NAME(level) elog_level_name(level)
 
 /* Convenience setup macro with console subscriber */
-extern void elog_console_subscriber(log_level_t level, const char *msg);
+extern void elog_console_subscriber(elog_level_t level, const char *msg);
 #define LOG_INIT_WITH_CONSOLE() do { \
     LOG_INIT(); \
     LOG_SUBSCRIBE(elog_console_subscriber, ELOG_DEFAULT_THRESHOLD); \

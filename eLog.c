@@ -32,7 +32,7 @@ volatile bool RTOS_READY = false; // Flag to indicate if RTOS is ready
 typedef struct
 {
   log_subscriber_t fn;
-  log_level_t threshold;
+  elog_level_t threshold;
   int active;
 } subscriber_entry_t;
 
@@ -52,7 +52,7 @@ static int s_mutex_initialized = 0;
 typedef struct
 {
   elog_module_t module;
-  log_level_t threshold;
+  elog_level_t threshold;
 } module_log_level_entry_t;
 
 static module_log_level_entry_t module_log_levels[ELOG_MD_MAX];
@@ -90,7 +90,7 @@ void elog_init(void)
  * @param level: Log level
  * @return String representation of level
  */
-const char *elog_level_name(log_level_t level)
+const char *elog_level_name(elog_level_t level)
 {
   switch (level)
   {
@@ -109,7 +109,7 @@ const char *elog_level_name(log_level_t level)
  * @brief Get the automatically calculated threshold level
  * @return The ELOG_DEFAULT_THRESHOLD value
  */
-log_level_t elog_get_auto_threshold(void) { return ELOG_DEFAULT_THRESHOLD; }
+elog_level_t elog_get_auto_threshold(void) { return ELOG_DEFAULT_THRESHOLD; }
 
 /* ========================================================================== */
 /* Built-in Console Subscriber */
@@ -120,7 +120,7 @@ log_level_t elog_get_auto_threshold(void) { return ELOG_DEFAULT_THRESHOLD; }
  * @param level: Severity level of the message
  * @param msg: Formatted message string
  */
-void elog_console_subscriber(log_level_t level, const char *msg)
+void elog_console_subscriber(elog_level_t level, const char *msg)
 {
 #if ELOG_USE_COLOR
   /* Color codes for different log levels */
@@ -384,7 +384,7 @@ RTOS_READY = ready;
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void elog_message(elog_module_t module, log_level_t level, const char *fmt, ...)
+void elog_message(elog_module_t module, elog_level_t level, const char *fmt, ...)
 {
   if (level < elog_get_module_threshold(module))
   {
@@ -429,7 +429,7 @@ void elog_message(elog_module_t module, log_level_t level, const char *fmt, ...)
  * @param fmt: Printf-style format string
  * @param ...: Format arguments
  */
-void elog_message_with_location(elog_module_t module, log_level_t level, const char *file, const char *func,
+void elog_message_with_location(elog_module_t module, elog_level_t level, const char *file, const char *func,
                                      int line, const char *fmt, ...)
 {
   if (level < elog_get_module_threshold(module))
@@ -478,7 +478,7 @@ void elog_message_with_location(elog_module_t module, log_level_t level, const c
  * @param threshold: Minimum level to send to this subscriber
  * @return Error code
  */
-log_err_t elog_subscribe(log_subscriber_t fn, log_level_t threshold)
+elog_err_t elog_subscribe(log_subscriber_t fn, elog_level_t threshold)
 {
   /* If RTOS was ready then take mutex with timeout */
   if (elog_is_RTOS_ready() && elog_mutex_take(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK)
@@ -486,7 +486,7 @@ log_err_t elog_subscribe(log_subscriber_t fn, log_level_t threshold)
     return ELOG_ERR_SUBSCRIBERS_EXCEEDED; /* Return error if can't get mutex */
   }
 
-  log_err_t result = ELOG_ERR_SUBSCRIBERS_EXCEEDED;
+  elog_err_t result = ELOG_ERR_SUBSCRIBERS_EXCEEDED;
 
   if (s_num_subscribers < ELOG_MAX_SUBSCRIBERS)
   {
@@ -521,7 +521,7 @@ exit:
  * @param fn: Function to unsubscribe
  * @return Error code
  */
-log_err_t elog_unsubscribe(log_subscriber_t fn)
+elog_err_t elog_unsubscribe(log_subscriber_t fn)
 {
   /* If RTOS was ready then take mutex with timeout */
   if (elog_is_RTOS_ready() && elog_mutex_take(&s_log_mutex, ELOG_MUTEX_TIMEOUT_MS) != ELOG_THREAD_OK)
@@ -529,7 +529,7 @@ log_err_t elog_unsubscribe(log_subscriber_t fn)
     return ELOG_ERR_NOT_SUBSCRIBED; /* Return error if can't get mutex */
   }
 
-  log_err_t result = ELOG_ERR_NOT_SUBSCRIBED;
+  elog_err_t result = ELOG_ERR_NOT_SUBSCRIBED;
 
   for (int i = 0; i < s_num_subscribers; i++)
   {
@@ -596,7 +596,7 @@ uint32_t elog_get_task_id(void)
   return 0;
 }
 
-log_err_t elog_set_module_threshold(elog_module_t module, log_level_t threshold)
+elog_err_t elog_set_module_threshold(elog_module_t module, elog_level_t threshold)
 {
   if (module >= ELOG_MD_MAX) { return ELOG_ERR_INVALID_LEVEL; }
   for (int i = 0; i < module_log_level_count; ++i)
@@ -610,7 +610,7 @@ log_err_t elog_set_module_threshold(elog_module_t module, log_level_t threshold)
   return ELOG_ERR_SUBSCRIBERS_EXCEEDED;
 }
 
-log_level_t elog_get_module_threshold(elog_module_t module)
+elog_level_t elog_get_module_threshold(elog_module_t module)
 {
   if (module >= ELOG_MD_MAX) { return ELOG_DEFAULT_THRESHOLD; }
   for (int i = 0; i < module_log_level_count; ++i)

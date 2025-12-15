@@ -82,7 +82,7 @@ void comm_task_example(void) {
 /**
  * @brief Example of using custom subscriber in RTOS environment
  */
-void custom_subscriber_example(log_level_t level, const char *msg) {
+void custom_subscriber_example(elog_level_t level, const char *msg) {
     printf("[%lu] CUSTOM[%s]: %s\n", 
            (unsigned long)0, /* Would be real timestamp */
            elog_level_name(level), 
