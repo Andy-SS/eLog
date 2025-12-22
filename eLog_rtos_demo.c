@@ -42,7 +42,7 @@ void rtos_logging_init(void) {
 }
 
 /**
- * @brief Example task that uses thread-safe logging
+ * @brief Example task that uses thread-safe logging with unified error codes
  */
 void sensor_task_example(void) {
     elog_set_module_threshold(ELOG_MD_SENSOR, ELOG_LEVEL_DEBUG);
@@ -51,17 +51,25 @@ void sensor_task_example(void) {
     int sensor_value = 42;
     ELOG_INFO(ELOG_MD_SENSOR, "Sensor reading: %d", sensor_value);
 
+    /* Demonstrate sensor-specific error codes (0x40-0x5F) */
     if (sensor_value > 50) {
-        ELOG_WARNING(ELOG_MD_SENSOR, "Sensor value high: 0x%02X", ELOG_SENSOR_ERR_RANGE);
+        ELOG_WARNING(ELOG_MD_SENSOR, "Sensor range exceeded: 0x%02X", ELOG_SENSOR_ERR_RANGE);
     }
     if (sensor_value < 0) {
-        ELOG_CRITICAL(ELOG_MD_SENSOR, "Sensor failure detected: 0x%02X", ELOG_SENSOR_ERR_NOT_FOUND);
+        ELOG_CRITICAL(ELOG_MD_SENSOR, "Sensor not responding: 0x%02X", ELOG_SENSOR_ERR_NOT_FOUND);
     }
+    
+    /* Example of checking sensor communication */
+    int accel_status = -1;
+    if (accel_status < 0) {
+        ELOG_ERROR(ELOG_MD_SENSOR, "Accelerometer calibration failed: 0x%02X", ELOG_ACCEL_ERR);
+    }
+    
     ELOG_DEBUG(ELOG_MD_SENSOR, "Sensor task completed");
 }
 
 /**
- * @brief Example communication task with thread-safe logging
+ * @brief Example communication task with thread-safe logging and unified error codes
  */
 void comm_task_example(void) {
     elog_set_module_threshold(ELOG_MD_COMM, ELOG_LEVEL_DEBUG);
@@ -70,12 +78,26 @@ void comm_task_example(void) {
     ELOG_INFO(ELOG_MD_COMM, "Initializing UART communication");
     ELOG_DEBUG(ELOG_MD_COMM, "Starting I2C transaction");
 
+    /* Demonstrate communication error codes (0x20-0x3F) */
     int comm_status = -1;
     if (comm_status != 0) {
         ELOG_ERROR(ELOG_MD_COMM, "I2C communication failed: 0x%02X", ELOG_COMM_ERR_I2C);
     } else {
         ELOG_INFO(ELOG_MD_COMM, "I2C communication successful");
     }
+    
+    /* Example UART timeout scenario */
+    int uart_result = 0;
+    if (uart_result == 0) {
+        ELOG_WARNING(ELOG_MD_COMM, "UART response timeout: 0x%02X", ELOG_COMM_ERR_UART);
+    }
+    
+    /* Example checksum validation */
+    int checksum_valid = 0;
+    if (!checksum_valid) {
+        ELOG_ERROR(ELOG_MD_COMM, "Packet checksum mismatch: 0x%02X", ELOG_COMM_ERR_CHECKSUM);
+    }
+    
     ELOG_DEBUG(ELOG_MD_COMM, "Communication task completed");
 }
 

@@ -1,7 +1,7 @@
 /***********************************************************
  * @file	eLog.c
  * @author	Andy Chen (clgm216@gmail.com)
- * @version	0.04
+ * @version	0.05
  * @date	2024-09-10
  * @brief  Enhanced logging system implementation inspired by uLog
  *         INDEPENDENT IMPLEMENTATION - No external dependencies

@@ -1,10 +1,11 @@
-# Updated eLog - Enhanced Logging System for Embedded MCU Projects
+# Enhanced eLog - Advanced Logging System for Embedded MCU Projects
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/Platform-ARM%20Cortex--M-blue.svg)](https://developer.arm.com/architectures/cpu-architecture/m-profile)
 [![C Standard](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
+[![Version](https://img.shields.io/badge/Version-0.05-blue.svg)]
 
-A comprehensive, lightweight, and feature-rich logging system designed specifically for embedded microcontroller projects. Inspired by uLog but significantly enhanced with modern features, backwards compatibility, and embedded-first design.
+A comprehensive, lightweight, and feature-rich logging system designed specifically for embedded microcontroller projects. Inspired by uLog but significantly enhanced with modern features, RTOS threading support, unified error codes, and backwards compatibility.
 
 ## 🚀 Features
 
@@ -37,7 +38,7 @@ A comprehensive, lightweight, and feature-rich logging system designed specifica
 
 ## 🏆 Comparison with Original uLog
 
-| Feature                   | eLog V0.3         | uLog                | Advantage         |
+| Feature                   | eLog V0.05        | uLog                | Advantage         |
 |---------------------------|-------------------|---------------------|-------------------|
 | **Thread Safety**         | ✅ Multi-RTOS      | ❌ None              | **eLog**          |
 | **Compile-time Optimization** | ✅ Per-level   | ❌ All-or-nothing    | **eLog**          |
@@ -49,7 +50,7 @@ A comprehensive, lightweight, and feature-rich logging system designed specifica
 | **Legacy Integration**        | ✅ Seamless    | ❌ Requires migration| **eLog**          |
 | **Task Information**          | ✅ Auto-detect | ❌ None              | **eLog**          |
 | **Per-Module Log Thresholds** | ✅ Runtime set | ❌ None              | **eLog**          |
-| **Memory Usage**              | 128B buffer    | 120B buffer          | **eLog**          |
+| **Memory Usage**              | 128B buffer    | 120B buffer          | Tie               |
 | **Max Subscribers**           | 6 (configurable)| 6 (configurable)    | Tie               |
 
 ## 📦 Quick Start
@@ -66,12 +67,12 @@ int main() {
     LOG_INIT_WITH_CONSOLE_AUTO();
     
     // Your existing code works unchanged!
-    printIF("System initialized");           // Legacy macro
-    printERR("Error code: 0x%02X", ELOG_COMM_ERR_I2C);
+    printIF(ELOG_MD_MAIN, "System initialized");           // Legacy macro
+    printERR(ELOG_MD_MAIN, "Error code: 0x%02X", ELOG_COMM_ERR_I2C);
     
     // Or use enhanced logging
-    ELOG_INFO("Battery level: %d%%", battery_level);
-    ELOG_ERROR("Sensor failure: 0x%02X", ELOG_SENSOR_ERR_NOT_FOUND);
+    ELOG_INFO(ELOG_MD_MAIN, "Battery level: %d%%", battery_level);
+    ELOG_ERROR(ELOG_MD_MAIN, "Sensor failure: 0x%02X", ELOG_SENSOR_ERR_NOT_FOUND);
     
     return 0;
 }
@@ -164,8 +165,8 @@ if (stack_overflow_detected) {
 ### Log Levels
 - `ELOG_LEVEL_TRACE` (100): Function entry/exit, detailed flow
 - `ELOG_LEVEL_DEBUG` (101): Variable values, state changes  
-- `ELOG_LEVEL_DEBUG` (102): Normal operation events
-- `ELOG_LEVEL_DEBUG` (103): Recoverable errors, performance issues
+- `ELOG_LEVEL_INFO` (102): Normal operation events
+- `ELOG_LEVEL_WARNING` (103): Recoverable errors, performance issues
 - `ELOG_LEVEL_ERROR` (104): Serious problems requiring attention
 - `ELOG_LEVEL_CRITICAL` (105): System failures, unrecoverable errors
 - `ELOG_LEVEL_ALWAYS` (106): Essential system messages
@@ -174,24 +175,24 @@ if (stack_overflow_detected) {
 
 #### Enhanced Logging
 ```c
-ELOG_TRACE("Function entry: %s", __func__);
-ELOG_DEBUG("Variable x = %d", x);
-ELOG_INFO("System ready");
-ELOG_WARNING("Performance degraded");  
-ELOG_ERROR("Operation failed: 0x%02X", error_code);
-ELOG_CRITICAL("System failure");
-ELOG_ALWAYS("Boot complete");
+ELOG_TRACE(ELOG_MD_MAIN, "Function entry: %s", __func__);
+ELOG_DEBUG(ELOG_MD_MAIN, "Variable x = %d", x);
+ELOG_INFO(ELOG_MD_MAIN, "System ready");
+ELOG_WARNING(ELOG_MD_MAIN, "Performance degraded");  
+ELOG_ERROR(ELOG_MD_MAIN, "Operation failed: 0x%02X", error_code);
+ELOG_CRITICAL(ELOG_MD_MAIN, "System failure");
+ELOG_ALWAYS(ELOG_MD_MAIN, "Boot complete");
 ```
 
 #### Legacy Compatibility
 ```c
-printTRACE("Trace message");
-printLOG("Debug message");
-printIF("Info message");
-printWRN("Warning message");
-printERR("Error message");
-printCRITICAL("Critical message");
-printALWAYS("Always logged");
+printTRACE(ELOG_MD_MAIN, "Trace message");
+printLOG(ELOG_MD_MAIN, "Debug message");
+printIF(ELOG_MD_MAIN, "Info message");
+printWRN(ELOG_MD_MAIN, "Warning message");
+printERR(ELOG_MD_MAIN, "Error message");
+printCRITICAL(ELOG_MD_MAIN, "Critical message");
+printALWAYS(ELOG_MD_MAIN, "Always logged");
 ```
 
 ### Error Code Categories
@@ -205,7 +206,7 @@ printALWAYS("Always logged");
 - **RTOS** (0xE0-0xEF): Tasks, queues, semaphores, mutexes
 - **Critical** (0xF0-0xFF): Stack, heap, hard faults, assertions
 
-## � RTOS Threading Configuration
+## 🔌 RTOS Threading Configuration
 
 ### Thread Safety Options
 ```c
@@ -234,14 +235,14 @@ void task1(void *pvParameters) {
     LOG_INIT_WITH_THREAD_INFO();  /* Initialize with task name in logs */
     
     for(;;) {
-        ELOG_INFO("Task 1 is running");
+        ELOG_INFO(ELOG_MD_TASK_A, "Task 1 is running");
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
 void task2(void *pvParameters) {
     for(;;) {
-        ELOG_DEBUG("Task 2 processing data");
+        ELOG_DEBUG(ELOG_MD_TASK_B, "Task 2 processing data");
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
@@ -259,7 +260,7 @@ void thread_entry(ULONG thread_input) {
     LOG_INIT_WITH_CONSOLE_AUTO();
     
     while(1) {
-        ELOG_INFO("ThreadX thread [%s] executing", elog_get_task_name());
+        ELOG_INFO(ELOG_MD_MAIN, "ThreadX thread [%s] executing", elog_get_task_name());
         tx_thread_sleep(100);
     }
 }
@@ -274,11 +275,11 @@ void thread_entry(ULONG thread_input) {
 
 int main(void) {
     LOG_INIT_WITH_CONSOLE_AUTO();
-    ELOG_INFO("Bare metal application started");
+    ELOG_INFO(ELOG_MD_MAIN, "Bare metal application started");
     
     while(1) {
         // Main loop
-        ELOG_DEBUG("Main loop iteration");
+        ELOG_DEBUG(ELOG_MD_MAIN, "Main loop iteration");
     }
 }
 ```
@@ -305,12 +306,15 @@ void elog_console_subscriber_with_thread(elog_level_t level, const char *msg);
 - **Timeout Behavior**: Logging calls will timeout and skip if mutex cannot be acquired
 - **RTOS Integration**: Minimal impact on existing RTOS task scheduling
 
-## 🔧 New Features
-- **Per-File Log Thresholds**: Control log verbosity for each source file/module at runtime using `elog_set_file_threshold()` and `elog_get_file_threshold()`.
-- **`elog_update_RTOS_ready` Function**: Allows dynamic updates to the RTOS readiness flag, enabling or disabling thread-safe operations based on runtime conditions.
-- **Fallback Mutex Implementation**: For non-RTOS environments, a `pthread_mutex`-based implementation ensures thread safety without requiring an RTOS.
+## 🔧 New Features in V0.05
 
-## �🔧 Configuration Options
+- **Unified Error Codes**: Single comprehensive `elog_error_t` enum (0x00-0xFF) consolidating logging system errors and MCU subsystem errors organized by category
+- **Per-Module Log Thresholds**: Control log verbosity for each module at runtime using `elog_set_module_threshold()` and `elog_get_module_threshold()`
+- **Enhanced Examples**: New examples demonstrating unified error codes across all subsystems (logging 0x00-0x0F, system 0x10-0x1F, communication 0x20-0x3F, sensors 0x40-0x5F, power 0x60-0x7F, storage 0x80-0x9F, RTOS 0xE0-0xEF, critical 0xF0-0xFF)
+- **RTOS Ready Configuration**: Improved thread-safe implementations with automatic fallback for non-RTOS environments
+- **Backward Compatibility**: Legacy typedef `log_err_t` maintains compatibility with existing code
+
+## ⚙️ Configuration Options
 
 ```c
 /* Subscriber configuration */
@@ -344,25 +348,35 @@ void elog_console_subscriber_with_thread(elog_level_t level, const char *msg);
 - Disable unused log levels at compile time
 - Use `ELOG_MAX_SUBSCRIBERS` to limit subscriber array size
 
-## 🧪 Testing
+## 🧪 Examples
 
-The library includes comprehensive examples in `eLog_example.c` and `eLog_example_rtos.c`:
+The library includes comprehensive examples in `eLog_example.c`, `eLog_example_rtos.c`, and `eLog_rtos_demo.c`:
 
-### Basic Examples
-- Basic logging demonstration
+### Basic Examples (`eLog_example.c`)
+- Basic logging with all log levels
+- Per-module threshold control
 - Multiple subscriber setup  
-- Error code usage
+- Unified error code usage by subsystem (0x00-0xFF)
 - Legacy compatibility testing
+- Auto-threshold calculation
 - Performance testing
 - Memory usage validation
 
-### RTOS Threading Examples (NEW!)
+### RTOS Threading Examples (`eLog_example_rtos.c`)
 - Thread safety demonstration
-- Multi-task logging scenarios
+- Multi-subscriber coordination
 - Task information integration
 - RTOS-specific feature testing
 - Mutex timeout behavior
 - Performance impact measurement
+- Error codes with RTOS context
+
+### Task-Based Examples (`eLog_rtos_demo.c`)
+- Sensor task logging with error codes
+- Communication task logging with error codes
+- Custom subscriber implementation
+- Per-module threshold in RTOS context
+- Real-world RTOS integration patterns
 
 ## 🚀 Performance
 
@@ -405,4 +419,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**eLog** - Making embedded debugging easier, one log message at a time! 🚀
+Enhanced eLog - Advanced Logging System for Embedded MCU Projects (v0.05)

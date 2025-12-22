@@ -1,7 +1,7 @@
 /***********************************************************
  * @file	eLog_example.c
  * @author	Andy Chen (clgm216@gmail.com)
- * @version	0.04
+ * @version	0.05
  * @date	2024-09-10
  * @brief  Enhanced logging system usage examples
  *         Demonstrates both legacy and enhanced logging APIs
@@ -290,6 +290,69 @@ void simpleAppInitializationExample(void) {
 void rtosReadinessExample(void) {
     elogUpdateRtosReady(true);
     ELOG_INFO(ELOG_MD_MAIN, "RTOS is now ready for logging");
+}
+
+/**
+ * @brief Demonstrate unified error codes organized by subsystem (0x00-0xFF)
+ * @retval None
+ */
+void unifiedErrorCodesExample(void) {
+  printf("\n=== Unified Error Codes by Subsystem (0x00-0xFF) ===\n");
+  LOG_INIT_WITH_CONSOLE_AUTO();
+
+  /* Logging System Errors (0x00-0x0F) */
+  ELOG_INFO(ELOG_MD_MAIN, "--- Logging System Errors (0x00-0x0F) ---");
+  ELOG_ERROR(ELOG_MD_MAIN, "Invalid log level: 0x%02X", ELOG_ERR_INVALID_LEVEL);
+  ELOG_ERROR(ELOG_MD_MAIN, "Subscribers exceeded: 0x%02X", ELOG_ERR_SUBSCRIBERS_EXCEEDED);
+  ELOG_WARNING(ELOG_MD_MAIN, "Not subscribed: 0x%02X", ELOG_ERR_NOT_SUBSCRIBED);
+
+  /* System Errors (0x10-0x1F) */
+  ELOG_INFO(ELOG_MD_MAIN, "--- System Errors (0x10-0x1F) ---");
+  ELOG_ERROR(ELOG_MD_MAIN, "System initialization failed: 0x%02X", ELOG_SYS_ERR_INIT);
+  ELOG_ERROR(ELOG_MD_MAIN, "Memory allocation failed: 0x%02X", ELOG_SYS_ERR_MEMORY);
+  ELOG_ERROR(ELOG_MD_MAIN, "Configuration error: 0x%02X", ELOG_SYS_ERR_CONFIG);
+
+  /* Communication Errors (0x20-0x3F) */
+  ELOG_INFO(ELOG_MD_COMM, "--- Communication Errors (0x20-0x3F) ---");
+  ELOG_WARNING(ELOG_MD_COMM, "UART timeout: 0x%02X", ELOG_COMM_ERR_UART);
+  ELOG_ERROR(ELOG_MD_COMM, "I2C bus error: 0x%02X", ELOG_COMM_ERR_I2C);
+  ELOG_ERROR(ELOG_MD_COMM, "Checksum error: 0x%02X", ELOG_COMM_ERR_CHECKSUM);
+  ELOG_WARNING(ELOG_MD_COMM, "Buffer overrun: 0x%02X", ELOG_COMM_ERR_OVERRUN);
+
+  /* Sensor Errors (0x40-0x5F) */
+  ELOG_INFO(ELOG_MD_SENSOR, "--- Sensor Errors (0x40-0x5F) ---");
+  ELOG_WARNING(ELOG_MD_SENSOR, "Sensor not found: 0x%02X", ELOG_SENSOR_ERR_NOT_FOUND);
+  ELOG_ERROR(ELOG_MD_SENSOR, "Accelerometer error: 0x%02X", ELOG_ACCEL_ERR);
+  ELOG_WARNING(ELOG_MD_SENSOR, "Sensor range exceeded: 0x%02X", ELOG_SENSOR_ERR_RANGE);
+  ELOG_ERROR(ELOG_MD_SENSOR, "Gyroscope calibration failed: 0x%02X", ELOG_GYRO_ERR);
+
+  /* Power Management Errors (0x60-0x7F) */
+  ELOG_INFO(ELOG_MD_MAIN, "--- Power Management Errors (0x60-0x7F) ---");
+  ELOG_CRITICAL(ELOG_MD_MAIN, "Low voltage detected: 0x%02X", ELOG_PWR_ERR_LOW_VOLTAGE);
+  ELOG_ERROR(ELOG_MD_MAIN, "Overcurrent detected: 0x%02X", ELOG_PWR_ERR_OVERCURRENT);
+  ELOG_ERROR(ELOG_MD_MAIN, "Thermal shutdown: 0x%02X", ELOG_PWR_ERR_THERMAL);
+
+  /* Storage Errors (0x80-0x9F) */
+  ELOG_INFO(ELOG_MD_MAIN, "--- Storage Errors (0x80-0x9F) ---");
+  ELOG_ERROR(ELOG_MD_MAIN, "Flash write failed: 0x%02X", ELOG_STORAGE_ERR_WRITE);
+  ELOG_ERROR(ELOG_MD_MAIN, "Storage full: 0x%02X", ELOG_STORAGE_ERR_FULL);
+  ELOG_WARNING(ELOG_MD_MAIN, "Flash read timeout: 0x%02X", ELOG_STORAGE_ERR_READ);
+
+  /* RTOS Errors (0xE0-0xEF) */
+  ELOG_INFO(ELOG_MD_MAIN, "--- RTOS Errors (0xE0-0xEF) ---");
+  ELOG_ERROR(ELOG_MD_MAIN, "Task creation failed: 0x%02X", ELOG_RTOS_ERR_TASK);
+  ELOG_ERROR(ELOG_MD_MAIN, "Mutex operation failed: 0x%02X", ELOG_RTOS_ERR_MUTEX);
+  ELOG_ERROR(ELOG_MD_MAIN, "Semaphore operation failed: 0x%02X", ELOG_RTOS_ERR_SEMAPHORE);
+  ELOG_WARNING(ELOG_MD_MAIN, "Queue overflow detected: 0x%02X", ELOG_RTOS_ERR_QUEUE);
+
+  /* Critical System Errors (0xF0-0xFF) */
+  ELOG_INFO(ELOG_MD_MAIN, "--- Critical System Errors (0xF0-0xFF) ---");
+  ELOG_CRITICAL(ELOG_MD_MAIN, "Stack overflow detected: 0x%02X", ELOG_CRITICAL_ERR_STACK);
+  ELOG_CRITICAL(ELOG_MD_MAIN, "Hard fault exception: 0x%02X", ELOG_CRITICAL_ERR_HARDFAULT);
+  ELOG_CRITICAL(ELOG_MD_MAIN, "Heap corruption: 0x%02X", ELOG_CRITICAL_ERR_HEAP);
+  ELOG_CRITICAL(ELOG_MD_MAIN, "Assertion failure: 0x%02X", ELOG_CRITICAL_ERR_ASSERT);
+
+  printf("Unified error codes demonstration complete.\n");
 }
 
 /* Updated example usage for eLog */
